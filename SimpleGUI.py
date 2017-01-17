@@ -15,7 +15,7 @@ class Check_Box_State(Frame):
     def state(self):
         return map((lambda var: var.get()), self.vars)
 
-class GUI(Frame):
+class GUI_Objects(Frame):
 
     def __init__(self, parent=None):
         Frame.__init__(self, parent)
@@ -50,12 +50,13 @@ class GUI(Frame):
         search.pack()
         return search
 
-class GUIBuilder(Frame):
 
-    def __init__(self, parent=None):
-        Frame.__init__(self, parent)
+class Main_Builder(Frame):
 
-        self.gui = GUI(master)
+    def __init__(self, master=None):
+        Frame.__init__(self, master)
+
+        self.gui = GUI_Objects(master)
 
         self.breadth = self.gui.add_checkbox(master, 'Breadth', [1, 2, 3, 4, 5])
 
@@ -69,7 +70,7 @@ class GUIBuilder(Frame):
 
         self.endtime = self.gui.add_scale(master, 'End Before', 1, 24)
 
-        self.search = self.gui.add_text_field(master, 'Search for')
+        self.search = self.gui.add_text_field(master, 'Search for (3 letter course code or name)')
 
     @property
     def breadth(self):
@@ -142,6 +143,23 @@ class GUIBuilder(Frame):
         self._term = input
 
 
+"""class CouseBuilder(Frame):
+    def __init__(self, course_window=None):
+        Frame.__init__(self, course_window)
+
+        self.gui = GUI_Objects(course_window)
+
+
+
+
+def course_list(courses):
+    course_window = Tk()
+"""
+
+
+
+
+
 def allstates(obj):
     """
     Takes in all the options and runs the output
@@ -151,17 +169,20 @@ def allstates(obj):
     """
 
     from CourseGrabber import make_search
-
+    print('a')
     courses = make_search(obj.breadth, obj.term, obj.course_level, obj.day, obj.startime, obj.endtime, obj.search)
+    print('b')
 
+    print(courses)
     for items in courses:
         print(items)
+
     return courses
 
 if __name__ == '__main__':
     master = Tk()
 
-    interface = GUIBuilder(master)
+    interface = Main_Builder(master)
 
     courses = Button(master, text='SEARCH!', command=lambda: allstates(interface)).pack(side=BOTTOM)
 
