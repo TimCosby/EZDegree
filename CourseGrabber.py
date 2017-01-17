@@ -85,6 +85,9 @@ def make_search(breadth, term, course_level, day, startime, endtime, text_search
         search += 'start:>=%22' + str(startime) + ':00%22%20AND%20'
         search += 'end:<=%22' + str(endtime) + ':00%22%20AND%20'
 
+    lista = ["ABS", "USA", "ANA", "ANT", "FAH", "ARH", "AST", "BCH", "CTA", "CSB", "CHM", "CIN", "CLA", "COL", "CSC", "EDU", "CAS", "CRI", "DTS", "DRM", "ESS", "EAS", "EEB", "ECO", "IRE", "ENG", "ENV", "ETH", "EUR", "FOR", "FRE", "GGR", "GER", "HIS", "HPS", "HMB", "IMM", "IMC", "INI", "ITA", "CJS", "LMP", "LAS", "LIN", "MAT", "MST", "MGY", "MUS", "NMC", "NEW", "NFS", "PCJ", "PHC", "PCL", "PHL", "PHY", "PSL", "POL", "PSY", "PPG", "RLG", "RSM", "SDS", "SLA", "SOC", "SAS", "SPA", "SMC", "STA", "TRN", "UNI", "VIC", "WGS", "WDW"]
+    listb = ["Aboriginal Studies", "American Studies", "Anatomy", "Anthropology", "Art", "Archaeology", "Astronomy and Astrophysics", "Biochemistry", "Canadian Institute for Theoretical Astrophysics", "Cell and Systems Biology", "Chemistry", "Cinema Studies", "Classics", "Comparative Literature", "Computer Science", "Concurrent Teacher Education Program", "Contemporary Asian Studies", "Criminology and Sociolegal Studies", "Diaspora and Transnational Studies", "Drama, Theatre and Performance Studies", "Earth Sciences", "East Asian Studies", "Ecology & Evolutionary Biology", "Economics", "Employment Relations, Centre for Industrial Relations and Human Resources", "English", "Environment, School of", "Ethics, Centre for", "European Studies", "Forestry", "French", "Geography", "German", "History", "History and Philosophy of Science and Technology", "Human Biology", "Immunology", "Impact Centre", "Innis College", "Italian", "Jewish Studies", "Laboratory Medicine and Pathobiology", "Latin American Studies", "Linguistics", "Mathematics", "Medieval Studies, Centre for", "Molecular Genetics and Microbiology", "Music", "Near & Middle Eastern Civilizations", "New College", "Nutritional Science", "Peace, Conflict and Justice Studies", "Pharmaceutical Chemistry", "Pharmacology", "Philosophy", "Physics", "Physiology", "Political Science", "Psychology", "Public Policy", "Religious Studies", "Rotman Commerce", "Sexual Diversity Studies, Mark S. Bonham Centre", "Slavic Languages and Literature", "Sociology", "South Asian Studies", "Spanish", "St. Michaels College", "Statistical Sciences", "Trinity College", "University College", "Victoria College", "Women and Gender Studies", "Woodsworth College"]
+
     #Returns list of courses
     return ping_search(search[:-9], text_search)
 
@@ -97,7 +100,8 @@ def ping_search(search, text_search):
     """
 
     if text_search != '':
-        text_search = 'code:%22' + str(text_search) + '%22'
+        if len(text_search) == 3:
+            text_search = 'code:%22' + text_search + '%22'
         if search != '':
             text_search = '%20AND%20' + text_search
     else:
@@ -133,19 +137,34 @@ if __name__ == '__main__':
     #search = 'code:"CSC"%20AND%20name:"Introduction"%20AND%20level:>100'
     search = 'code:"CSC"'#%20AND%20breadth:5%20OR%20breadth:3%20OR%20division:"engineering"'
 
-    page = 'https://cobalt.qas.im/api/1.0/courses/filter?q=code:"Computer science" AND day:"friday"&limit=100'#' + search
+    page = 'https://cobalt.qas.im/api/1.0/courses/filter?q=code:"CSC"&limit=100'#' + search
     page = page.replace('"', '%22').replace(' ', '%20')
     pr = Request(page)
     pr.add_header('Authorization', 'TVwEIjRZP80vhnY8HhM0OzZCMfydh4lA')
 
-    file = urlopen(pr)
+    file1 = urlopen(pr)
 
-    lines = file.read().decode('utf-8').split('id":"')
+    page = 'https://cobalt.qas.im/api/1.0/courses/search?q="COMPUTER"&limit=100'
+    page = page.replace('"', '%22').replace(' ', '%20')
+    pr = Request(page)
+    pr.add_header('Authorization', 'TVwEIjRZP80vhnY8HhM0OzZCMfydh4lA')
 
-    lines.pop(0)
+    file2 = urlopen(pr)
 
-    for index in range(len(lines)):
+    lines1 = file1.read().decode('utf-8').split('id":"')
+    lines2 = file2.read().decode('utf-8').split('id":"')
+
+    lines1.pop(0)
+    lines2.pop(0)
+
+    for index in range(len(lines1)):
         # Puts courses into list
-        lines[index] = lines[index][:lines[index].find('"')]
+        lines1[index] = lines1[index][:lines1[index].find('"')]
 
-    print(lines)
+    for index in range(len(lines2)):
+        # Puts courses into list
+        lines2[index] = lines2[index][:lines2[index].find('"')]
+
+    setf = list(set(lines1).intersection(lines2))
+
+    print(setf)
