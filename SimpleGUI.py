@@ -169,9 +169,7 @@ def allstates(obj):
     """
 
     from CourseGrabber import make_search
-    print('a')
     courses = make_search(obj.breadth, obj.term, obj.course_level, obj.day, obj.startime, obj.endtime, obj.search)
-    print('b')
 
     print(courses)
     for items in courses:
