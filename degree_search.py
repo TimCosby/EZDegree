@@ -1,15 +1,12 @@
 import ast
 file = open('programs.txt')
-
 lines = {}
-
 for x in range(5):
     lines.update(ast.literal_eval(file.readline()))
-
 file.close()
 
 def search(key_word, all=False, name=False, id=False, type=False, desc=False,
-           fce=False, br1=False, br2=False, br3=False, br4=False):
+           fce=False, breadth=False):
     """
     Search through all records for key_word in selected bool(s)
 
@@ -19,66 +16,63 @@ def search(key_word, all=False, name=False, id=False, type=False, desc=False,
     @param bool id:
     @param bool type:
     @param bool desc:
-    @param bool fce:
-    @param bool br1:
-    @param bool br2:
-    @param bool br3:
-    @param bool br4:
     @return: list of str
+
+    >>> search('astro major', name=True, type=True)
+    ['Astronomy & Astrophysics Major']
     """
 
     if isinstance(key_word, str):
         result = set([])
+        name_set = set([])
+        id_set = set([])
+        type_set = set([])
+        desc_set = set([])
 
         keys = lines.keys()
 
-        if all or name:
-            for key in keys:
-                if key_word.lower() in get_req(key, name=True).lower():
-                    result.add(key)
-        if all or id:
-            for key in keys:
-                if key_word.lower() in get_req(key, id=True).lower():
-                    result.add(key)
-        if all or type:
-            for key in keys:
-                if key_word.lower() in get_req(key, type=True).lower():
-                    result.add(key)
-        if all or desc:
-            for key in keys:
-                if key_word.lower() in get_req(key, desc=True).lower():
-                    result.add(key)
-        if all or fce:
-            for key in keys:  # Make it breadth1 etc
-                if 'breadth' in key_word.lower():
-                    i = key_word.lower().count('breadth')
-                    for breadth in range(i):
-                        pass
-                        #go ot index of breadth and find a number after it
-                        #if theres a letter before a number then return all breadths
-        if all or br1:
-            for key in keys:
-                if key_word.lower() in get_req(key, br1=True).lower():
-                    result.add(key)
-        if all or br2:
-            for key in keys:
-                if key_word.lower() in get_req(key, br2=True).lower():
-                    result.add(key)
-        if all or br3:
-            for key in keys:
-                if key_word.lower() in get_req(key, br3=True).lower():
-                    result.add(key)
-        if all or br4:
-            for key in keys:
-                if key_word.lower() in get_req(key, br4=True).lower():
-                    result.add(key)
+        for key in keys:
+            for word in key_word.split():
+                if all or name:
+                    if word.lower() in get_req(key, name=True).lower():
+                        name_set.add(key)
+                if all or id:
+                    if word.lower() in get_req(key, id=True).lower():
+                        id_set.add(key)
+                if all or type:
+                    if word.lower() in get_req(key, type=True).lower():
+                        type_set.add(key)
+                if all or desc:
+                    if word.lower() in get_req(key, desc=True).lower():
+                        desc_set.add(key)
 
+        # Only have the same outputs
+        #print(name_set, id_set, type_set, desc_set)
+        if name or all:
+            result = result.union(name_set)
+        if id or all:
+            if len(result) == 0:
+                result = result.union(id_set)
+            else:
+                result = result.intersection(id_set)
+        if type or all:
+            if len(result) == 0:
+                result = result.union(type_set)
+            else:
+                result = result.intersection(type_set)
+        if desc_set or all:
+            if len(result) == 0:
+                result = result.union(desc_set)
+            else:
+                result = result.intersection(desc_set)
+
+        # Combine all outputs
         return list(result)
     else:
         raise Exception('Invalid keyword!')
 
-def get_req(program, name=True, id=False, type=False, desc=False, fce=False,
-            br1=False, br2=False, br3=False, br4=False):
+def get_req(program, name=False, id=False, type=False, desc=False, fce=False,
+            yr1=False, yr2=False, yr3=False, yr4=False):
     """
     Get values for a single key
 
@@ -88,44 +82,44 @@ def get_req(program, name=True, id=False, type=False, desc=False, fce=False,
     @param bool type:
     @param bool desc:
     @param bool fce:
-    @param bool br1:
-    @param bool br2:
-    @param bool br3:
-    @param bool br4:
+    @param bool yr1:
+    @param bool yr2:
+    @param bool yr3:
+    @param bool yr4:
     @return: str | list of str | list of bool
     """
 
-    key = ''
+    key = []
     if name == True:
-        key += 'Name'
+        key.append('Name')
     if id == True:
-        key += 'ID'
+        key.append('ID')
     if type == True:
-        key += 'Type'
+        key.append('Type')
     if desc == True:
-        key += 'Description'
+        key.append('Description')
     if fce == True:
-        key += 'FCE'
-    if br1 == True:
-        key += '1'
-    if br2 == True:
-        key += '2'
-    if br3 == True:
-        key += '3'
-    if br4 == True:
-        key += '4'
+        key.append('FCE')
+    if yr1 == True:
+        key.append('1')
+    if yr2 == True:
+        key.append('2')
+    if yr3 == True:
+        key.append('3')
+    if yr4 == True:
+        key.append('4')
 
-    if key == '':
+    if key == []:
         raise Exception('Insufficient inputs!')
-    elif key in lines[program].keys():
-        return lines[program][key]
+    elif len(key) == 1:
+        return lines[program][key[0]]
     else:
         raise Exception('You may only have one input!')
 
 
 if __name__ == '__main__':
-    program = 'Astronomy & Astrophysics Major'
+    program = 'Astronomy & Astrophysics Minor'
     #result = get_req(program, type=True)
-    result = search('Astro', name=True)
+    result = search('astro minor', name=True, type=True)
 
     print(result)
