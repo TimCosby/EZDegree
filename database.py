@@ -1,5 +1,6 @@
 from xlutils.copy import copy
 from xlrd import open_workbook
+import ast
 
 class User:
     """
@@ -19,6 +20,8 @@ class User:
                         Row that the user is in, in the database
         @param bool _logged_in:
                         Whether or not the user has logged in successfully
+        @param dict _course_list:
+                        List of all the courses the user has registered
     """
 
     def __init__(self, username, password):
@@ -31,9 +34,32 @@ class User:
         self._user_row = 0
 
         self._logged_in = False
-        self._login()
+        self.__login()
 
-    def _login(self):
+        self._course_dict = {}
+        self.__update_course_dict()
+
+    def __update_course_dict(self):
+        """
+        Update the course list for the user based on the database
+
+        @return: None
+        """
+        self._course_list = []
+        read_sheet = open_workbook('database.xls').sheet_by_index(0)
+
+        for column in range(2, len(read_sheet.row(self._user_row))):
+            temp = read_sheet.row(self._user_row)[column].value.split(':')
+
+            if isinstance(temp[2], float):
+                temp[2] = float(temp[2])
+            else:
+                temp[2] = ast.literal_eval(temp[2])
+
+            self._course_dict[temp[0]] = Course(temp[0], temp[1], temp[2])
+            #self._course_list.append(Course(temp[0], temp[1]))
+
+    def __login(self):
         """
         Attempts to log the user in based on given username and password.
 
@@ -63,9 +89,9 @@ class User:
             # If username DNE in database
             ans = input('Do you want to create a new user Y/N\n').lower()
             if 'y' in ans:
-                self._create_new_user(read_sheet)
+                self.__create_new_user(read_sheet)
 
-    def _create_new_user(self, read_sheet):
+    def __create_new_user(self, read_sheet):
         """
         Creates a new user in the database
 
@@ -87,7 +113,7 @@ class User:
         """
         return self._logged_in
 
-    def add_course(self, course, type):
+    def add_course(self, course, type, mark):
         """
         Add or modify <course> in the user's list of courses
 
@@ -96,13 +122,15 @@ class User:
         and type need to be exact.
 
         @param str course: course code to be added
-        @param str type:
+        @param str type: Current course process
+        @param float mark: Course Mark
         @return: None
         """
 
         read_book = open_workbook('database.xls')
         read_sheet = read_book.sheet_by_index(0)
 
+        # Finds the new-free column in the database for the user
         max_col = read_sheet.ncols
         for column in range(read_sheet.ncols):
             # Finds the user's first empty column or the pre-existing course
@@ -110,7 +138,17 @@ class User:
                 max_col = column
                 break
 
-        self._write_sheet.write(self._user_row, max_col, course + ':' + type)
+        # Checks to see if the course already exists in the database
+        if course in self._course_dict:
+            self._course_dict[course].modify(type=type)
+            # If the course does exist just modify its values
+            if mark is not None:
+                self._course_dict[course].modify(mark=float(mark))
+        else:
+            # If the course does not exist, create a new one
+            self._course_dict[course] = Course(course, type, mark)
+
+        self._write_sheet.write(self._user_row, max_col, course + ':' + type + ':' + str(mark))
         self._write_book.save('database.xls')
 
     def get_courses(self):
@@ -119,17 +157,8 @@ class User:
 
         @return: list of str
         """
-        temp = []
-        read_sheet = open_workbook('database.xls').sheet_by_index(0)
 
-        for col in range(2, read_sheet.ncols):
-            cell_value = read_sheet.cell(self._user_row, col).value
-            if cell_value != '':
-                temp.append(cell_value)
-            else:
-                break
-
-        return temp
+        return self._course_dict.keys()
 
     def __str__(self):
         """
@@ -140,9 +169,44 @@ class User:
         temp = ''
 
         for course in self.get_courses():
-            temp += course.split(':')[0] + ', '
+            temp += course + ', '
 
         return temp[:-2]
+
+
+class Course:
+    """
+    Creates Course Object
+
+    Attributes:
+    ===========
+        @param str course_code:
+                    Course Code
+        @param str type:
+                    Current course process (ie. passed/failed)
+        @param int mark:
+                    Mark for the course
+    """
+    def __init__(self, course_code, type, mark=None):
+        self._course_code = course_code
+        self._type = type
+        self._mark = mark
+
+    def modify(self, type=None, mark=None):
+        """
+        Modifies the course's type and mark values
+
+        @param str | None type: Updated Course Process
+        @param float | None mark: Updated Mark
+        @return: None
+        """
+        if type is not None:
+            self._type = type
+        if mark is not None:
+            self._mark = mark
+
+    def __str__(self):
+        return self._course_code
 
 
 def correction(search):
@@ -187,10 +251,10 @@ if __name__ == '__main__':
         except Exception as e:
             print(e)
 
-    course = None
+    course = mark = type = None
     while course != 'exit':
         if course is not None:
-            user.add_course(course, type)
+            user.add_course(course, type, mark)
             print('Courses:', user)
 
         course = input('What course would you like to add? or do you want to exit?\n')
@@ -198,9 +262,11 @@ if __name__ == '__main__':
         if course != 'exit':
             temp = correction(course)
 
-            if not course in temp:
+            if not course.upper() in temp:
                 # If entered is not identical to the database
                 print('Did you mean ' + str(temp)[1:-1] + '?')
                 course = None
             else:
-                type = input('Is the course current/taken/planned\n')
+                type = input('Is the course planned/current/passed/failed/dropped\n')
+                if 'passed' in type.lower():
+                    mark = float(input('What mark did you recieve?\n'))
