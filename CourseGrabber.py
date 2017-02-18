@@ -1,9 +1,10 @@
 from urllib.request import Request
 from urllib.request import urlopen
-import ast
+
+DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+TERMS = ['Fall', 'Winter', 'Summer']
 
 def auto_put(var, name):
-
     """
     Puts everything into it's correct format to be sent off to the factory.
     var is the list to read positives from
@@ -21,32 +22,13 @@ def auto_put(var, name):
                 thing = str(thing + 1)
 
             elif name == 'term':
-                if thing == 0:
-                    thing = '%22Fall%22'
-                elif thing == 1:
-                    thing = '%22Winter%22'
+                thing = '%22' + TERMS[thing] + '%22'
 
             elif name == 'level':
-                if thing == 0:
-                    thing = '100'
-                elif thing == 1:
-                    thing = '200'
-                elif thing == 2:
-                    thing = '300'
-                elif thing == 3:
-                    thing = '400'
+                thing = str(thing + 1) + '100'
 
             elif name == 'day':
-                if thing == 0:
-                    thing = '%22Monday%22'
-                elif thing == 1:
-                    thing = '%22Tuesday%22'
-                elif thing == 2:
-                    thing = '%22Wednesday%22'
-                elif thing == 3:
-                    thing = '%22Thursday%22'
-                elif thing == 4:
-                    thing = '%22Friday%22'
+                thing = '%22' + DAYS[thing] + '22'
 
             else:
                 raise Exception('Failed to enter assignment', var, name)
@@ -84,9 +66,6 @@ def make_search(breadth, term, course_level, day, startime, endtime, text_search
     if startime != endtime and startime < endtime:
         search += 'start:>=%22' + str(startime) + ':00%22%20AND%20'
         search += 'end:<=%22' + str(endtime) + ':00%22%20AND%20'
-
-    lista = ["ABS", "USA", "ANA", "ANT", "FAH", "ARH", "AST", "BCH", "CTA", "CSB", "CHM", "CIN", "CLA", "COL", "CSC", "EDU", "CAS", "CRI", "DTS", "DRM", "ESS", "EAS", "EEB", "ECO", "IRE", "ENG", "ENV", "ETH", "EUR", "FOR", "FRE", "GGR", "GER", "HIS", "HPS", "HMB", "IMM", "IMC", "INI", "ITA", "CJS", "LMP", "LAS", "LIN", "MAT", "MST", "MGY", "MUS", "NMC", "NEW", "NFS", "PCJ", "PHC", "PCL", "PHL", "PHY", "PSL", "POL", "PSY", "PPG", "RLG", "RSM", "SDS", "SLA", "SOC", "SAS", "SPA", "SMC", "STA", "TRN", "UNI", "VIC", "WGS", "WDW"]
-    listb = ["Aboriginal Studies", "American Studies", "Anatomy", "Anthropology", "Art", "Archaeology", "Astronomy and Astrophysics", "Biochemistry", "Canadian Institute for Theoretical Astrophysics", "Cell and Systems Biology", "Chemistry", "Cinema Studies", "Classics", "Comparative Literature", "Computer Science", "Concurrent Teacher Education Program", "Contemporary Asian Studies", "Criminology and Sociolegal Studies", "Diaspora and Transnational Studies", "Drama, Theatre and Performance Studies", "Earth Sciences", "East Asian Studies", "Ecology & Evolutionary Biology", "Economics", "Employment Relations, Centre for Industrial Relations and Human Resources", "English", "Environment, School of", "Ethics, Centre for", "European Studies", "Forestry", "French", "Geography", "German", "History", "History and Philosophy of Science and Technology", "Human Biology", "Immunology", "Impact Centre", "Innis College", "Italian", "Jewish Studies", "Laboratory Medicine and Pathobiology", "Latin American Studies", "Linguistics", "Mathematics", "Medieval Studies, Centre for", "Molecular Genetics and Microbiology", "Music", "Near & Middle Eastern Civilizations", "New College", "Nutritional Science", "Peace, Conflict and Justice Studies", "Pharmaceutical Chemistry", "Pharmacology", "Philosophy", "Physics", "Physiology", "Political Science", "Psychology", "Public Policy", "Religious Studies", "Rotman Commerce", "Sexual Diversity Studies, Mark S. Bonham Centre", "Slavic Languages and Literature", "Sociology", "South Asian Studies", "Spanish", "St. Michaels College", "Statistical Sciences", "Trinity College", "University College", "Victoria College", "Women and Gender Studies", "Woodsworth College"]
 
     #Returns list of courses
     return ping_search(search[:-9], text_search)
