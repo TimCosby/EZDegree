@@ -5,10 +5,9 @@ for x in range(5):
     lines.update(ast.literal_eval(file.readline()))
 file.close()
 
-def search(key_word, all=False, name=False, id=False, type=False, desc=False,
-           fce=False, breadth=False):
+def search(key_word, all=False, name=False, id=False, type=False, desc=False):
     """
-    Search through all records for key_word in selected bool(s)
+    Search through all records for key_word in selected categorie(s)
 
     @param str key_word:
     @param bool all:
@@ -74,7 +73,7 @@ def search(key_word, all=False, name=False, id=False, type=False, desc=False,
 def get_req(program, name=False, id=False, type=False, desc=False, fce=False,
             yr1=False, yr2=False, yr3=False, yr4=False):
     """
-    Get values for a single key
+    Get specific requirements for a specific program offered
 
     @param str program:
     @param bool name:
@@ -119,7 +118,7 @@ def get_req(program, name=False, id=False, type=False, desc=False, fce=False,
 
 if __name__ == '__main__':
     program = 'Astronomy & Astrophysics Minor'
-    #result = get_req(program, type=True)
-    result = search('astro minor', name=True, type=True)
+    result = get_req(program, type=True)
+    #result = search('astro minor', name=True, type=True)
 
     print(result)
