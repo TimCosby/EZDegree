@@ -2,6 +2,9 @@ from xlutils.copy import copy
 from xlrd import open_workbook
 import ast
 
+#Shatter Sort
+#Radix Sort
+
 class User:
     """
     Creates User Object
@@ -26,6 +29,9 @@ class User:
 
     def __init__(self, username, password):
         self._username = username.strip().lower()
+        if 2 > len(self._username) < 21 or username.count('!') != 0:
+            raise Exception('Invalid Username!')
+
         self._password = password.strip()
 
         self._write_book = copy(open_workbook('database.xls'))
@@ -38,26 +44,6 @@ class User:
 
         self._course_dict = {}
         self.__update_course_dict()
-
-    def __update_course_dict(self):
-        """
-        Update the course list for the user based on the database
-
-        @return: None
-        """
-        self._course_list = []
-        read_sheet = open_workbook('database.xls').sheet_by_index(0)
-
-        for column in range(2, len(read_sheet.row(self._user_row))):
-            temp = read_sheet.row(self._user_row)[column].value.split(':')
-
-            if isinstance(temp[2], float):
-                temp[2] = float(temp[2])
-            else:
-                temp[2] = ast.literal_eval(temp[2])
-
-            self._course_dict[temp[0]] = Course(temp[0], temp[1], temp[2])
-            #self._course_list.append(Course(temp[0], temp[1]))
 
     def __login(self):
         """
@@ -99,11 +85,37 @@ class User:
         @return: None
         """
         print('Creating an account\n')
-        self._write_sheet.write(read_sheet.nrows, 0, self._username)
+
+        temp_user = self._username
+        if len(temp_user) < 21:
+            for _ in range(20 - len(temp_user)):
+                temp_user += '!'
+
+        self._write_sheet.write(read_sheet.nrows, 0, temp_user)
         self._write_sheet.write(read_sheet.nrows, 1, self._password)
         self._write_book.save('database.xls')
         self._user_row = read_sheet.nrows
         self._logged_in = True
+
+    def __update_course_dict(self):
+        """
+        Update the course list for the user based on the database
+
+        @return: None
+        """
+        self._course_list = []
+        read_sheet = open_workbook('database.xls').sheet_by_index(0)
+
+        for column in range(2, len(read_sheet.row(self._user_row))):
+            temp = read_sheet.row(self._user_row)[column].value.split(':')
+
+            if isinstance(temp[2], float):
+                temp[2] = float(temp[2])
+            else:
+                temp[2] = ast.literal_eval(temp[2])
+
+            self._course_dict[temp[0]] = Course(temp[0], temp[1], temp[2])
+            #self._course_list.append(Course(temp[0], temp[1]))
 
     def get_logged_in(self):
         """
@@ -239,7 +251,7 @@ def correction(search):
 if __name__ == '__main__':
     # Loops until you successfully log in
     while True:
-        username = input('Enter your username: ')
+        username = input('Enter your username (Between 2-20 characters no ! characters): ')
         password = input('Enter your password: ')
         try:
             # Logs in
