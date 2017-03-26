@@ -1,224 +1,330 @@
-from xlutils.copy import copy
-from xlrd import open_workbook
+from openpyxl import load_workbook
+from openpyxl import Workbook
 import ast
+import degree_search
+from urllib.request import Request
+from urllib.request import urlopen
+from urllib.request import HTTPError
+from Course import Course
 
 #Shatter Sort
 #Radix Sort
+FILE_NAME = 'database.xlsx'
+PAGE = 'https://cobalt.qas.im/api/1.0/courses/'
+KEY = 'TVwEIjRZP80vhnY8HhM0OzZCMfydh4lA'
+
 
 class User:
     """
-    Creates User Object
-
-    Attributes:
-    ===========
-        @param str _username:
-                        username of user
-        @param str _password:
-                        password of user
-        @param Book _write_book:
-                        Writable book version of the database
-        @param sheet _write_sheet:
-                        Writable sheet .xls of _write_book
-        @param int _user_row:
-                        Row that the user is in, in the database
+    Private Attributes:
+    ==================
+        @param Workbook _wb: 
+                    Database workbook
+        
+        @param Worksheet _ws:
+                    Database's worksheet
+                    
         @param bool _logged_in:
-                        Whether or not the user has logged in successfully
+                    Return if user is logged in
+                    
+        @param int _user_row:
+                    Row that the user is located in worksheet
+                    
         @param dict _course_list:
-                        List of all the courses the user has registered
+                    List of all courses user has taken
+                    
+    Public Attributes:
+    =================
+        @param str username:
+                    User's name
     """
 
     def __init__(self, username, password):
-        self._username = username.strip().lower()
-        if 2 > len(self._username) < 21 or username.count('!') != 0:
-            raise Exception('Invalid Username!')
+        """
+        User's Profile
+        
+        @param str username: 
+        @param str password: 
+        """
 
-        self._password = password.strip()
+        self._wb = load_workbook(FILE_NAME)
+        self._ws = self._wb.active
 
-        self._write_book = copy(open_workbook('database.xls'))
-        self._write_sheet = self._write_book.get_sheet(0)
-
-        self._user_row = 0
-
+        self.username = username.lower().split(' ')[0]
         self._logged_in = False
-        self.__login()
 
-        self._course_dict = {}
-        self.__update_course_dict()
+        # Find if the user is already in the system
+        if not self._find_user():
+            # If registering as a new user
+            if 'y' in input('Do you want to register as a new user? Y/N?\n').lower():
+                self._ws.cell(column=1, row=self._user_row, value=self.username) # Username
+                self._ws.cell(column=2, row=self._user_row, value=password) # Password
+                self._ws.cell(column=3, row=self._user_row, value='{}') # Empty course list
 
-    def __login(self):
-        """
-        Attempts to log the user in based on given username and password.
+                self._wb.save(FILE_NAME)
+                self._logged_in = True
 
-        If username does not exist in database, ask user if they want to
-        create a new user.
-
-        @return: None
-        """
-        read_book = open_workbook('database.xls')
-        read_sheet = read_book.sheet_by_index(0)
-
-        for row in range(read_sheet.nrows):
-            # Checks every row for a corresponding username
-            if read_sheet.cell(row, 0).value.lower() == self._username:
-                # If username is recognized in the database
-                if read_sheet.cell(row, 1).value == self._password:
-                    # If password and username are the same as the database
-                    self._logged_in = True
-                    self._user_row = row
-                    print('Successfully logged in!\n')
-                    break
-                else:
-                    # If wrong password was entered
-                    raise Exception('Invalid password!')
-
-        if not self._logged_in:
-            # If username DNE in database
-            ans = input('Do you want to create a new user Y/N\n').lower()
-            if 'y' in ans:
-                self.__create_new_user(read_sheet)
-
-    def __create_new_user(self, read_sheet):
-        """
-        Creates a new user in the database
-
-        @param sheet read_sheet:
-        @return: None
-        """
-        print('Creating an account\n')
-
-        temp_user = self._username
-        if len(temp_user) < 21:
-            for _ in range(20 - len(temp_user)):
-                temp_user += '!'
-
-        self._write_sheet.write(read_sheet.nrows, 0, temp_user)
-        self._write_sheet.write(read_sheet.nrows, 1, self._password)
-        self._write_book.save('database.xls')
-        self._user_row = read_sheet.nrows
-        self._logged_in = True
-
-    def __update_course_dict(self):
-        """
-        Update the course list for the user based on the database
-
-        @return: None
-        """
-        self._course_list = []
-        read_sheet = open_workbook('database.xls').sheet_by_index(0)
-
-        for column in range(2, len(read_sheet.row(self._user_row))):
-            temp = read_sheet.row(self._user_row)[column].value.split(':')
-
-            if isinstance(temp[2], float):
-                temp[2] = float(temp[2])
-            else:
-                temp[2] = ast.literal_eval(temp[2])
-
-            self._course_dict[temp[0]] = Course(temp[0], temp[1], temp[2])
-            #self._course_list.append(Course(temp[0], temp[1]))
-
-    def get_logged_in(self):
-        """
-        Returns whether or not the user successfully logged in.
-
-        @return: bool
-        """
-        return self._logged_in
-
-    def add_course(self, course, type, mark):
-        """
-        Add or modify <course> in the user's list of courses
-
-        To-Do:
-        Course added from GUI Interface - Would need an add button as course
-        and type need to be exact.
-
-        @param str course: course code to be added
-        @param str type: Current course process
-        @param float mark: Course Mark
-        @return: None
-        """
-
-        read_book = open_workbook('database.xls')
-        read_sheet = read_book.sheet_by_index(0)
-
-        # Finds the new-free column in the database for the user
-        max_col = read_sheet.ncols
-        for column in range(read_sheet.ncols):
-            # Finds the user's first empty column or the pre-existing course
-            if read_sheet.row(self._user_row)[column].value == '' or read_sheet.row(self._user_row)[column].value.split(':')[0] == course:
-                max_col = column
-                break
-
-        # Checks to see if the course already exists in the database
-        if course in self._course_dict:
-            self._course_dict[course].modify(type=type)
-            # If the course does exist just modify its values
-            if mark is not None:
-                self._course_dict[course].modify(mark=float(mark))
         else:
-            # If the course does not exist, create a new one
-            self._course_dict[course] = Course(course, type, mark)
+            # If logging in
+            if not self._attempt_login(password):
+                # If incorrect password
+                print('Incorrect Password!')
 
-        self._write_sheet.write(self._user_row, max_col, course + ':' + type + ':' + str(mark))
-        self._write_book.save('database.xls')
+            else:
+                # If correct password
+                print('Successfully Logged in!')
+                self._logged_in = True
+
+        if self._logged_in:
+            # Put together user's profile of courses
+            temp = ast.literal_eval(self._ws.cell(column=3, row=self._user_row).value)
+            self._course_list = {}
+            self._add_pre_courses(temp)
+            # Get all programs user is in <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    def add_course(self, course_code, lecture_code, ctype, cmark):
+        """
+        Adds a course to the user's profile
+        
+        @param str course_code: Course code of the course
+        @param str lecture_code: Lecture code
+        @param str ctype: Type of course Planned/Taken/etc
+        @param float cmark: Mark in the course
+        @return: NoneType
+        """
+
+        # See if course exists
+        course_info = self._get_course_info(course_code.upper())
+
+
+        # If course does exist
+        if course_info is not None:
+            # Get rid of useless info
+            course_info.pop('id')
+
+            # See if path is in the dictionary
+            try:
+                if course_code[3:6] in self._course_list[course_code[:3]]:
+                    # If code is already in the list - modify
+                    self._course_list[course_code[:3]][course_code[3:6]].modify(lecture_code=lecture_code, ctype=ctype, cmark=cmark)
+                else:
+                    # If not in list, add to list
+                    self._course_list[course_code[:3]].update({course_code[3:6]: Course(course_info, lecture_code=lecture_code, ctype=ctype, cmark=cmark)})
+
+            except KeyError:
+                # If node does not exist
+                self._course_list[course_code[:3]] = {course_code[3:6]: Course(course_info, lecture_code=lecture_code, ctype=ctype, cmark=cmark)}
+
+            self._ws.cell(column=3, row=self._user_row, value=str(self._course_list))
+
+            self._wb.save(FILE_NAME)
+
+        else:
+            print('Invalid course name!')
+
+    def get_loggedin(self):
+        """
+        Return if user is logged in
+
+        @return: bool 
+        """
+
+        return self._logged_in
 
     def get_courses(self):
         """
-        Return all courses the user has entered
+        Return all Courses
+        
+        @return: list of Course 
+        """
+        rlist = []
+        keys = self._course_list.keys()
 
-        @return: list of str
+        for key in keys:
+            for item in self._course_list[key]:
+                rlist.append(self._course_list[key][item])
+
+        return rlist
+
+    def get_breadths(self):
+        """
+        Return breadth totals of planned and taken
+        
+        @return: dict of int
+        """
+        breadth_totals = {'Taken': [0, 0, 0, 0, 0], 'Planned': [0, 0, 0, 0, 0]}
+        courses = self.get_courses()
+
+        for course in courses:
+            course_type = course.ctype
+
+            for breadth in course.breadths:
+                # C for completed
+                if course_type == 'C':
+                    breadth_totals['Taken'][breadth - 1] += 1
+                # P for planned, A for active
+                elif course_type == 'P' or course_type == 'A':
+                    breadth_totals['Planned'][breadth - 1] += 1
+
+        return breadth_totals
+
+    def get_course_mark(self, course):
+        return self._course_list[course[:3]][course[3:6]].cmark
+
+    def get_cgpa(self):
+        total = 0
+        credits = 0
+
+        courses = self.get_courses()
+        for course in courses:
+
+            mark = course.cmark
+            if mark > 84:
+                grade_point = 4.0
+            elif mark > 79:
+                grade_point = 3.7
+            elif mark > 76:
+                grade_point = 3.3
+            elif mark > 72:
+                grade_point = 3.0
+            elif mark > 69:
+                grade_point = 2.7
+            elif mark > 66:
+                grade_point = 2.3
+            elif mark > 62:
+                grade_point = 2.0
+            elif mark > 59:
+                grade_point = 1.7
+            elif mark > 56:
+                grade_point = 1.3
+            elif mark > 52:
+                grade_point = 1.0
+            elif mark > 49:
+                grade_point = 0.7
+            else:
+                grade_point = 0
+
+            if course.ccode[-1] == 'Y':
+                total += 1 * grade_point
+                credits += 1
+            else:
+                total += .5 * grade_point
+                credits += .5
+
+        if total != 0:
+            return total / credits
+        return 0.0
+
+    def get_total_credits(self):
+        """
+        Return total credits
+        
+        @return: dict of float 
+        """
+        total = {'Planned': 0, 'Taken': 0}
+
+        courses = self.get_courses()
+
+        for course in courses:
+            if course.ccode[-1] == 'Y':
+                if course.ctype == 'C':
+                    total['Taken'] += 1
+                elif course.ctype == 'P' or course.ctype == 'A':
+                    total['Planned'] += 1
+
+            else:
+                if course.ctype == 'C':
+                    total['Taken'] += .5
+                elif course.ctype == 'P' or course.ctype == 'A':
+                    total['Planned'] += .5
+
+        return total
+
+    def _attempt_login(self, password):
+        """
+        Return if the user's password is correct
+
+        @param str password: 
+        @return: bool
+        """
+        if self._ws.cell(column=2, row=self._user_row).value == password:
+            return True
+
+        return False
+
+    def _find_user(self):
+        """
+        Return if <username> is registered.
+
+        @return: bool
         """
 
-        return self._course_dict.keys()
+        cell = 0
+        row = 1
 
-    def __str__(self):
+        while cell is not None:
+            # While a name is in the cell
+            cell = self._ws.cell(column=1, row=row).value
+
+            if cell == self.username:
+                # If the cell is the username
+                self._user_row = row
+                return True
+
+            else:
+                row += 1
+
+        # If the names did not match the username
+        self._user_row = row - 1
+        return False
+
+    def _add_pre_courses(self, temp):
         """
-        Return user's course list
+        Turns from texted generated values to Course objects
 
-        @return: str
+        @return: NoneType
         """
-        temp = ''
 
-        for course in self.get_courses():
-            temp += course + ', '
+        for key in temp:
+            self._course_list[key] = {}
+            for item in temp[key]:
+                self._course_list[key][item] = Course(temp[key][item][0],
+                                                      lecture_code=
+                                                      temp[key][item][1],
+                                                      ctype=temp[key][item][2],
+                                                      cmark=temp[key][item][3])
 
-        return temp[:-2]
-
-
-class Course:
-    """
-    Creates Course Object
-
-    Attributes:
-    ===========
-        @param str course_code:
-                    Course Code
-        @param str type:
-                    Current course process (ie. passed/failed)
-        @param int mark:
-                    Mark for the course
-    """
-    def __init__(self, course_code, type, mark=None):
-        self._course_code = course_code
-        self._type = type
-        self._mark = mark
-
-    def modify(self, type=None, mark=None):
+    def _get_course_info(self, course_code):
         """
-        Modifies the course's type and mark values
-
-        @param str | None type: Updated Course Process
-        @param float | None mark: Updated Mark
-        @return: None
+        
+        @param course_code: 
+        @return: 
+        
+        >>> user = User('Tim', 'Cosby')
+        >>> user._get_course_info('CSC148H1F20169')
         """
-        if type is not None:
-            self._type = type
-        if mark is not None:
-            self._mark = mark
 
-    def __str__(self):
-        return self._course_code
+        try:
+            page = PAGE + course_code
+            print(page)
+            pr = Request(page)
+            pr.add_header('Authorization', 'TVwEIjRZP80vhnY8HhM0OzZCMfydh4lA')
+
+            file = urlopen(pr)
+            lines = file.read().decode('utf-8')
+            lines = ast.literal_eval(lines)
+
+            return lines
+
+        except HTTPError:
+            # If course does not exist
+            return None
+
+
+class Program:
+    def __init__(self):
+        # Make a text file of this pre-made
+        pass
 
 
 def correction(search):
@@ -248,6 +354,37 @@ def correction(search):
 
     return temper
 
+if __name__ == '__main__':
+    details = None
+
+    while True:
+        # Run till correct login details have been entered
+
+        details = User(input('Enter Username: '), input('Enter Password: '))
+
+        if not details.get_loggedin():
+            del details  # Delete the failed object
+        else:
+            break
+
+    while True:
+        course_code = input('Enter a course: ')
+        ctype = input('Type: ')
+        cmark = input('Mark: ')
+        lecture_code = input('Lecture: ')
+
+        if course_code != '' and ctype != '' and cmark != '' and lecture_code != '':
+            details.add_course(course_code, lecture_code=lecture_code, ctype=ctype, cmark=float(cmark))
+
+            if details._course_list[course_code[:3]][course_code[3:6]].lecture_code is None:
+                del details._course_list[course_code[:3]][course_code[3:6]]
+
+        print(details.get_courses())
+        print(details.get_breadths())
+        print(details.get_total_credits())
+        print(details.get_cgpa())
+
+'''
 if __name__ == '__main__':
     # Loops until you successfully log in
     while True:
@@ -282,3 +419,4 @@ if __name__ == '__main__':
                 type = input('Is the course planned/current/passed/failed/dropped\n')
                 if 'passed' in type.lower():
                     mark = float(input('What mark did you recieve?\n'))
+'''
