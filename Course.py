@@ -117,3 +117,29 @@ class Course:
                 return lecture
 
         return None
+
+class CourseNode:
+    def __init__(self, course_code, need=.5, requirement=False, children=None):
+        self.course_code = course_code
+        self.need = need
+        self.requirement = requirement
+        self.children = children
+
+    def _get_have(self, courses, list_=None):
+        if self.children is None:
+            if self.course_code in courses:
+                return 1
+            else:
+                return 0
+
+        elif list_ is None:
+            return [i for i in self.children].count(1)
+
+        else:
+            return [i for i in list_].count(1)
+
+    def completed(self, courses):
+        return self.requirement == self._get_have(courses)
+
+    def __repr__(self):
+        return ('CourseNode(' + str(self.course_code) + ', ' + str(self.need) + ', ' + str(self.requirement) + ', ' + str(self.children) + ')')
