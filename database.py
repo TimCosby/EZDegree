@@ -169,9 +169,9 @@ class User:
             # For CourseNode in dict
             if child.course_code is None:
                 # If child is a node, get the total credits from its child courses
-                total = self._update_program_nodes(root=child.children)
+                child.have = self._update_program_nodes(root=child.children)
 
-                if total >= child.need:
+                if child.have >= child.need:
                     # If the sum credits from its child courses satisfies its requirements
                     child.requirement = True
 
@@ -215,6 +215,7 @@ class User:
         @return: 
         """
         # Later make this only for if course is Completed
+        # Make a system to update breadth requirements
 
         try:
             if add:
@@ -446,7 +447,7 @@ class User:
 
         return total
 
-    def get_program_req(self, program_code, list_=None):
+    def get_program_req(self, program_code):
         """
         
         @param program_code: 
@@ -455,7 +456,64 @@ class User:
         >>> usr = User('Tim', 'Cosby')
         >>> usr.get_program_req('ASMAJ1423')
         """
-        pass
+        return self._program_tree[program_code]
+
+    def get_easiest(self, ratio=True):
+        """
+        Return easiest to get courses
+        
+        @return: list
+        """
+        totals = {}
+
+        def eval_totals(totals, temp):
+            """
+            Add to the total need and have
+            
+            @param dict of int totals: 
+            @param list of CourseNode | CourseNode temp: 
+            @return: 
+            """
+
+            if temp.requirement is True:
+                # If the group requirements have been met
+                totals[program][0] += temp.need
+                totals[program][1] += temp.need
+            else:
+                # If the group requirements have yet to be met
+                totals[program][0] += temp.need
+                totals[program][1] += temp.have
+
+            return totals
+
+        for program in self._program_tree:
+            # For each program
+            totals[program] = [0, 0]
+
+            for i in self._program_tree[program]:
+                # For each course
+                temp = self._program_tree[program][i]
+
+                if isinstance(temp, list):
+                    # If grouped courses
+                    for node in temp:
+                        totals.update(eval_totals(totals, node))
+
+                else:
+                    # If a CourseNode
+                    totals.update(eval_totals(totals, temp))
+
+        # Index 0: name, 1: need, 2: have, 3: ratio, 4: need-to-get
+        sorted_totals = [[i] + totals[i] for i in totals]
+        sorted_totals = [i + [i[2] / i[1]] + [i[1] - i[2]] for i in sorted_totals]
+
+        if ratio:
+            index = 3
+        else:
+            index = 4
+
+        sorted_totals.sort(reverse=True, key=lambda x: x[index])
+        return sorted_totals
 
     def _add_pre_courses(self, temp):
         """
@@ -471,7 +529,7 @@ class User:
             self._course_list[key] = {}
             for item in temp[key]:
                 # For each course
-                self._course_list[key][item] = Course(temp[key][item][0], lecture_code=temp[key][item][1], ctype=temp[key][item][2], cmark=temp[key][item][3])
+                self._course_list[key][item] = Course(temp[key][item][0], lecture_code=temp[key][item][1], ctype=temp[key][item][2], cmark=float(temp[key][item][3]))
 
                 # Tell the tree that the course is true
                 self._update_program_courses(temp[key][item][0]['code'][:-1], True)
@@ -520,7 +578,7 @@ class User:
 
             elif course[:2] == 'BR':
                 # Creates the new node for the tree
-                temp_course = CourseNode('\'' + course + '\'', need=course[3:])
+                temp_course = CourseNode('\'' + course[:-1] + '\'', need=float(course[3:]))
 
                 if course[:3] not in self._program_course_cache:
                     # If breadth is not yet cached
@@ -653,8 +711,7 @@ if __name__ == '__main__':
 
     while True:
         details.add_course('MAT235Y1Y20169', 'L0101', 'C', 50)
-        print(details._program_tree)
-        #print(details._program_course_cache)
+        print(details.get_easiest())
         course_code = input('Enter a course: ')
         ctype = input('Type: ')
         cmark = input('Mark: ')
