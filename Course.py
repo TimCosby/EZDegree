@@ -122,6 +122,7 @@ class CourseNode:
     def __init__(self, course_code, need=.5, requirement=False, children=None):
         self.course_code = course_code
         self.need = need
+        self.have = 0
         self.requirement = requirement
         self.children = children
 
