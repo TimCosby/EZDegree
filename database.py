@@ -11,9 +11,9 @@ from copy import deepcopy
 from build_tree import build_tree
 
 ##### TO DO ######
-# 1. Deal with adding to program requirements that have ****s in them (ie. USA4****
+# 1. Deal with adding to program requirements that have ****s in them (ie. USA4****) DEATH
 #
-# 2. Factor in FCE requirements into get_easiest
+# 2. Add breadth requirements to get easiest
 
 FILE_NAME = 'database.xlsx'
 PAGE = 'https://cobalt.qas.im/api/1.0/courses/filter?q=code:%22'
@@ -442,11 +442,11 @@ class User:
 
         for program in self._user_program_tree:
             # For each program
-            totals[program] = [0, 0]
+            totals[program] = [0, 0]  # [Need, Have]
 
-            for i in self._user_program_tree[program]:
+            for course in self._user_program_tree[program]:
                 # For each course
-                temp = self._user_program_tree[program][i]
+                temp = self._user_program_tree[program][course]
 
                 if isinstance(temp, list):
                     # If grouped courses
@@ -456,6 +456,40 @@ class User:
                 else:
                     # If a CourseNode
                     totals.update(eval_totals(totals, temp))
+
+            fce = self._program_tree[program]['fce']
+            if fce[0] is not None:
+                # If overall fce needed exists
+                temp = fce[0] - totals[program][0] # Get difference between what is needed overall and what is currently needed
+
+                if temp > 0: # If more required fces needed than courses needed to take
+                    totals[program][0] += temp
+
+            if fce[1:].count(None) != 4:
+                # If a level requirement exists
+                fce_temp = [0, 0, 0, 0]  # Levels [1, 2, 3, 4]
+
+                for course in [course.ccode for course in self.get_courses()]:
+                    # For every course taken
+
+                    if course[-2] == 'Y':
+                        # If year course
+                        credit = 1
+                    else:
+                        # If half course
+                        credit = .5
+
+                    fce_temp[int(course[3]) - 1] += credit
+
+                for index in range(4):
+                    # For each level requirement
+                    if fce[1 + index] is not None:
+                        # If the level requirement is not empty
+                        temp = fce[1 + index] - fce_temp[index]  # Get the difference
+
+                        if temp > 0:
+                            # If needed courses of the level are more than the courses taken of that level
+                            totals[program][0] += temp  # Add to the difference to the needed pile
 
         # Index 0: name, 1: need, 2: have, 3: ratio, 4: need-to-get
         sorted_totals = [[i] + totals[i] for i in totals]
@@ -579,6 +613,7 @@ class User:
         """
         # Later make this only for if course is Completed
         # Make a system to update breadth requirements
+        # If there is a **** course in cache, search up if the inputted course also meets the requirements (Would need to just update its have category if it doesn't)
 
         try:
             if add:
@@ -616,14 +651,3 @@ if __name__ == '__main__':
 
         if course_code != '' and ctype != '' and cmark != '' and lecture_code != '':
             details.add_course(course_code, lecture_code=lecture_code, ctype=ctype, cmark=float(cmark))
-
-        #    if details._course_list[course_code[:3]][course_code[3:6]].lecture_code is None:
-        #        del details._course_list[course_code[:3]][course_code[3:6]]
-
-        #print(details.get_breadths())
-        #print(details.get_total_credits())
-        #print(details.get_cgpa())
-        #print(details.add_course('CSC401H1S20171', 'L0101', 'C', 100 ))
-        #print(details.get_program_req('ASMAJ1423'))
-        #print([i.ccode for i in details.get_courses()])
-
