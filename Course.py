@@ -56,6 +56,12 @@ class Course:
         self.level = course_info['level']
         self.campus = course_info['campus']
 
+
+        if self.ccode[6] == 'Y':
+            self.cworth = 1.0
+        else:
+            self.cworth = 0.5
+
         lecture_info = self._find_lecture(lecture_code)
 
         if lecture_info is not None:
@@ -119,6 +125,10 @@ class Course:
         return None
 
 class CourseNode:
+    """
+    Used in relation for program tree
+    """
+
     def __init__(self, course_code, need=.5, requirement=False, children=None):
         self.course_code = course_code
         self.need = need
