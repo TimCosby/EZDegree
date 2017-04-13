@@ -542,6 +542,8 @@ class User:
                 if child.have >= child.need:
                     # If the sum credits from its child courses satisfies its requirements
                     child.requirement = True
+                else:
+                    child.requirement = False
 
     def _update_program_nodes(self, root=None):
         """
@@ -575,16 +577,13 @@ class User:
                 self._update_inner_nodes(root=root['lists'])
 
                 # Adds up the total credits taken in the group
-                total += sum(
-                    [i.need for i in root['lists'] if i.requirement is True])
+                total += sum([i.need for i in root['lists'] if i.requirement is True])
 
             except KeyError:
                 pass
 
             # Adds up the total single credits taken in the dictionary
-            total += sum([root[i].need for i in root if
-                          i != 'list' and isinstance(root[i], CourseNode) and
-                          root[i].requirement is True])
+            total += sum([root[i].need for i in root if i != 'list' and isinstance(root[i], CourseNode) and root[i].requirement is True])
 
             return total
 
@@ -603,18 +602,20 @@ class User:
         # If there is a **** course in cache, search up if the inputted course also meets the requirements (Would need to just update its have category if it doesn't)
 
         try:
-            cached_couse = self._program_course_cache[course.ccode[:-1]]
+            cached_course = self._program_course_cache[course.ccode[:-1]]
 
             if course.ctype == 'd' or (course.ctype == 'c' and course.cmark < 50) or not add:
                 # If dropped or have a failing grade or removing
-                cached_couse.requirement = False
+                cached_course.requirement = False
             else:
                 # Completes requirement
-                cached_couse.requirement = True
+                cached_course.requirement = True
         except KeyError:
             pass
 
         self._update_breadths()
+        self._update_generic()
+        print(self._program_course_cache)
 
     def _update_breadths(self):
         """
@@ -639,6 +640,56 @@ class User:
             except KeyError:
                 pass
 
+    def _update_generic(self):
+        """
+        Updates the generic course requirements
+        Ex: CSC4*****
+        
+        @return: 
+        """
+        for course in self._program_course_cache:
+            if '*' in course:
+                temp_node = self._program_course_cache[course]
+                temp_node.have = self._get_matches(course, [course.ccode for course in self.get_courses()])
+
+                if temp_node.have >= temp_node.need:
+                    temp_node.requirement = True
+                else:
+                    temp_node.requirement = False
+
+    def _get_matches(self, word, word_list):
+        """
+        Get the number of courses that match word, minus any characters that are *s
+        
+        @param str word: 
+        @param list of str word_list: 
+        @return: 
+        
+        >>> word = 'CSC4****'
+        >>> word_list = ['CSC400H1F', 'CSC300H1F', 'CSC451H1S']
+        >>> usr = User('Tim', 'Cosby')
+        >>> usr._get_matches(word, word_list)
+        2
+        """
+
+        matches = 0
+
+        for words in word_list:
+            early_end = False
+            for char in range(len(word)):
+                if word[char] == '*':
+                    pass
+                elif word[char] != words[char]:
+                    early_end = True
+                    break
+
+            if not early_end:
+                if words[-3] == 'Y':
+                    matches += 1
+                else:
+                    matches += .5
+
+        return matches
 
 
 if __name__ == '__main__':
