@@ -8,30 +8,15 @@ from urllib.request import HTTPError
 from urllib.request import URLError
 from Course import *
 from copy import deepcopy
+from build_tree import build_tree
 
 ##### TO DO ######
-# 1. Make a pre-load file for all the functions that only need to happen to
-#    update the system (ie. Creating the tree of all the courses - Check
+# 1. Deal with adding to program requirements that have ****s in them (ie. USA4****
 #
-# 2. Make a tree as shown in OneNote - Check
-#
-# 3. When adding a program only add the program code to the user's file - Check
-#
-# 4. In get_program_req etc. grab from the program tree instead of sudo shiz
-#
-# 5. Update To Do list
-#
-# 6. Seperate build tree by mutating the existing tree - Check
-#
-# 7. For this, cache all the instances of a single course as one object so
-#    there's no need to search the entire tree to update all of them - Check
-#
-# 8. Deal with adding to program requirements that have ****s in them (ie. USA4****
+# 2. Factor in FCE requirements into get_easiest
 
-#Shatter Sort
-#Radix Sort
 FILE_NAME = 'database.xlsx'
-PAGE = 'https://cobalt.qas.im/api/1.0/courses/'
+PAGE = 'https://cobalt.qas.im/api/1.0/courses/filter?q=code:%22'
 KEY = 'TVwEIjRZP80vhnY8HhM0OzZCMfydh4lA'
 WORKBOOK = load_workbook(FILE_NAME)
 WORKSHEET = WORKBOOK.active
@@ -144,88 +129,22 @@ class User:
             self._program_list = ast.literal_eval(WORKSHEET.cell(column=4, row=self._user_row).value)
 
             self._program_course_cache = {}
-            self._user_program_tree = deepcopy(PROGRAM_TREE)
-            self._program_tree = self._build_tree()
+            self._program_tree = deepcopy(PROGRAM_TREE)  # Get default program tree
+            print(self._program_tree)
+            self._user_program_tree = build_tree(self._program_tree, self._program_course_cache)  # Program the degree requirements while caching like courses as the same object
+            print(self._program_tree)
 
             # Put together user's profile of courses
             temp = ast.literal_eval(WORKSHEET.cell(column=3, row=self._user_row).value)
             self._add_pre_courses(temp)
 
-            print('protree',self._program_tree)
+            print('protree',self._user_program_tree)
 
         else:
             print('Incorrect Login!')
             self._logged_in = False
 
-    def _update_inner_nodes(self, root=None):
-        """
-        Update which nodes in a group in the tree are satisfied by their courses
-        
-        @param dict root: 
-        @return: NoneType
-        """
-
-        for child in root:
-            # For CourseNode in dict
-            if child.course_code is None:
-                # If child is a node, get the total credits from its child courses
-                child.have = self._update_program_nodes(root=child.children)
-
-                if child.have >= child.need:
-                    # If the sum credits from its child courses satisfies its requirements
-                    child.requirement = True
-
-    def _update_program_nodes(self, root=None):
-        """
-        Update which nodes in the tree are satisfied by their courses
-        
-        @param None | dict root: root dictionary looking 
-        @return: 
-        """
-        total = 0
-
-        if root is None:
-            # If the dict of all programs
-            for program in self._program_tree:
-
-                self._update_program_nodes(root=self._program_tree[program])
-        else:
-            # If a single program or node dict
-            try:
-                # Tries to recurse through the groups of courses
-                self._update_inner_nodes(root=root['lists'])
-
-                # Adds up the total credits taken in the group
-                total += sum([i.need for i in root['lists'] if i.requirement is True])
-
-            except: pass
-
-            # Adds up the total single credits taken in the dictionary
-            total += sum([root[i].need for i in root if i != 'list' and isinstance(root[i], CourseNode) and root[i].requirement is True])
-
-            return total
-
-    def _update_program_courses(self, course, add):
-        """
-        Updates the tree with new requirements
-        aka add or remove a course taken value from tree
-        
-        @param str course: course code
-        @param bool add: True if adding False if removing 
-        @return: 
-        """
-        # Later make this only for if course is Completed
-        # Make a system to update breadth requirements
-
-        try:
-            if add:
-                # Completes requirement
-                self._program_course_cache[course].requirement = True
-            else:
-                # Uncompletes requirement
-                self._program_course_cache[course].requirement = False
-
-        except KeyError: pass
+    """Course Functions"""
 
     def add_course(self, course_code, lecture_code, ctype, cmark):
         """
@@ -239,10 +158,10 @@ class User:
         """
 
         # See if course exists
-        course_info = self._get_course_info(course_code)
+        course_info = self._get_course_info(course_code[:8])
 
         # If course does exist
-        if course_info is not None:
+        if course_info is not None and course_info != []:
             # Get rid of useless info
             course_info.pop('id')
 
@@ -251,41 +170,23 @@ class User:
                 if course_code[3:6] in self._course_list[course_code[:3]]:
                     # If code is already in the list - modify
                     self._course_list[course_code[:3]][course_code[3:6]].modify(lecture_code=lecture_code, ctype=ctype, cmark=cmark)
-                else:
-                    # If not in list, add to list
-                    self._course_list[course_code[:3]].update({course_code[3:6]: Course(course_info, lecture_code=lecture_code, ctype=ctype, cmark=cmark)})
+                #else:
+                #    # If not in list, add to list
+                #    self._course_list[course_code[:3]].update({course_code[3:6]: Course(course_info, lecture_code=lecture_code, ctype=ctype, cmark=cmark)})
 
             except KeyError:
                 # If node does not exist
                 self._course_list[course_code[:3]] = {course_code[3:6]: Course(course_info, lecture_code=lecture_code, ctype=ctype, cmark=cmark)}
 
             WORKSHEET.cell(column=3, row=self._user_row, value=str(self._course_list))
-            self._update_program_courses(course_code[:8], True)
+
+            self._update_program_course(course_code[:8], True)
             self._update_program_nodes()
-            #self._program_tree = self._build_tree()
+
             WORKBOOK.save(FILE_NAME)
 
         else:
             print('Invalid course name!')
-
-    def add_program(self, program_code):
-        """
-        Adds a program to the user's profile
-        
-        @param str program_code: 
-        @return: NoneType
-        """
-
-        # Only add if program is not already in
-        if program_code in PROGRAM_TREE:
-            if program_code not in self._program_list:
-                self._program_list.append(program_code)
-
-                # Update database
-                WORKSHEET.cell(column=4, row=self._user_row, value=str(self._program_list))
-                WORKBOOK.save(FILE_NAME)
-        else:
-            print('Invalid Program!')
 
     def remove_course(self, course_code):
         """
@@ -298,26 +199,11 @@ class User:
 
         # Update database
         WORKSHEET.cell(column=3, row=self._user_row, value=str(self._course_list))
-        self._update_program_courses(course_code[:8], False)
+
+        self._update_program_course(course_code[:8], False)
         self._update_program_nodes()
+
         WORKBOOK.save(FILE_NAME)
-
-    def remove_program(self, program_code):
-        """
-        Delete a course from the list
-
-        @param str program_code: Code for the program 
-        @return: NoneType
-        """
-
-        try:
-            self._program_list.remove(program_code)
-
-            # Update database
-            WORKSHEET.cell(column=4, row=self._user_row, value=str(self._program_list))
-            WORKBOOK.save(FILE_NAME)
-        except ValueError:
-            print('Program does not exist')
 
     def get_loggedin(self):
         """
@@ -342,16 +228,6 @@ class User:
                 rlist.append(self._course_list[key][item])
 
         return rlist
-
-    def get_programs(self):
-        """
-        Return a list of taken programs
-        
-        >>> usr=User('Tim', 'Cosby')
-        >>> usr.add_program('ASMAJ0135')
-        >>> usr.get_programs()
-        """
-        return self._program_list
 
     def get_breadths(self):
         """
@@ -447,74 +323,6 @@ class User:
 
         return total
 
-    def get_program_req(self, program_code):
-        """
-        
-        @param program_code: 
-        @return: 
-        
-        >>> usr = User('Tim', 'Cosby')
-        >>> usr.get_program_req('ASMAJ1423')
-        """
-        return self._program_tree[program_code]
-
-    def get_easiest(self, ratio=True):
-        """
-        Return easiest to get courses
-        
-        @return: list
-        """
-        totals = {}
-
-        def eval_totals(totals, temp):
-            """
-            Add to the total need and have
-            
-            @param dict of int totals: 
-            @param list of CourseNode | CourseNode temp: 
-            @return: 
-            """
-
-            if temp.requirement is True:
-                # If the group requirements have been met
-                totals[program][0] += temp.need
-                totals[program][1] += temp.need
-            else:
-                # If the group requirements have yet to be met
-                totals[program][0] += temp.need
-                totals[program][1] += temp.have
-
-            return totals
-
-        for program in self._program_tree:
-            # For each program
-            totals[program] = [0, 0]
-
-            for i in self._program_tree[program]:
-                # For each course
-                temp = self._program_tree[program][i]
-
-                if isinstance(temp, list):
-                    # If grouped courses
-                    for node in temp:
-                        totals.update(eval_totals(totals, node))
-
-                else:
-                    # If a CourseNode
-                    totals.update(eval_totals(totals, temp))
-
-        # Index 0: name, 1: need, 2: have, 3: ratio, 4: need-to-get
-        sorted_totals = [[i] + totals[i] for i in totals]
-        sorted_totals = [i + [i[2] / i[1]] + [i[1] - i[2]] for i in sorted_totals]
-
-        if ratio:
-            index = 3
-        else:
-            index = 4
-
-        sorted_totals.sort(reverse=True, key=lambda x: x[index])
-        return sorted_totals
-
     def _add_pre_courses(self, temp):
         """
         Turns from texted generated values to Course objects
@@ -531,128 +339,33 @@ class User:
                 # For each course
                 self._course_list[key][item] = Course(temp[key][item][0], lecture_code=temp[key][item][1], ctype=temp[key][item][2], cmark=float(temp[key][item][3]))
 
-                # Tell the tree that the course is true
-                self._update_program_courses(temp[key][item][0]['code'][:-1], True)
+                # Tell the tree that the course is taken
+                self._update_program_course(temp[key][item][0]['code'][:-1], True)
+
         # Update the nodes in the tree for the new course additions
         self._update_program_nodes()
-
-    def _recur(self, courses):
-        """
-        Recursively format dictionary into computer readable
-        
-        @param list | tuple courses: 
-        @return: dict
-        """
-        temp = {}
-
-        for course in courses:
-            if isinstance(course, int):
-                # If the number of courses needed to be taken in a list of courses
-                pass
-
-            elif isinstance(course, list):
-                # If a list of ATLEAST this many courses in this list need to be taken
-                need = course[-1]  # Get the number of courses needed (routinely stored at the end of the list)
-                children = self._recur(course)  # Recurses through the list to get its children
-
-                try:
-                    # If list is already in the dictionary add a new Node to the list
-                    temp['lists'].append(CourseNode(None, need=need, children=children))
-
-                except KeyError:
-                    # If list is not yet in the dictionary add a new Node in a new list
-                    temp['lists'] = [CourseNode(None, need=need, children=children)]
-
-            elif isinstance(course, tuple):
-                # If a tuple of this AND this course need to be taken
-                need = len(courses)  # Get the number of courses needed (All courses in the tuple are needed)
-                children = self._recur(course)  # Recurses through the list to get its children
-
-                try:
-                    # If list is already in the dictionary add a new Node to the list
-                    temp['lists'].append(CourseNode(None, need=need, children=children))
-
-                except KeyError:
-                    # If list is not yet in the dictionary add a new Node in a new list
-                    temp['lists'] = [CourseNode(None, need=need, children=self._recur(course))]
-
-            elif course[:2] == 'BR':
-                # Creates the new node for the tree
-                temp_course = CourseNode('\'' + course[:-1] + '\'', need=float(course[3:]))
-
-                if course[:3] not in self._program_course_cache:
-                    # If breadth is not yet cached
-                    self._program_course_cache[course[:-1]] = temp_course
-
-                # Ties all like-courses to the same id
-                temp[course[:-1]] = self._program_course_cache[course[:-1]]
-
-            else:
-                # If just a regular course
-
-                if course[-2] == 'H' or course[-2] == '*':
-                    # If a half course or non-specific
-                    need = .5
-                else:
-                    # If a year course
-                    need = 1
-
-                # Creates the new node for the tree
-                temp_course = CourseNode('\'' + course + '\'', need=need)
-
-                if course not in self._program_course_cache:
-                    # If course is not yet cached
-                    self._program_course_cache[course] = temp_course
-
-                # Ties all like-courses to the same id
-                temp[course] = self._program_course_cache[course]
-
-        return temp
-
-    def _build_tree(self):
-        """
-        Builds the program tree
-        Only runs at start up
-        
-        @return: dict
-        """
-
-        tree = {}
-
-        for program in PROGRAM_TREE:
-            # Add all the level courses together into one big list
-            courses = self._user_program_tree[program][1]
-            courses.extend(self._user_program_tree[program][2])
-            courses.extend(self._user_program_tree[program][3])
-            courses.extend(self._user_program_tree[program][4])
-
-            # Get the proper dictionary format
-            tree.update({program: self._recur(courses)})
-
-        return tree
 
     def _get_course_info(self, course_code):
         """
         Returns course data from api or None if it either doesn't exist or have no internet
-        
+
         @param course_code: 
         @return: dict | None
-        
+
         >>> user = User('Tim', 'Cosby')
-        >>> user._get_course_info('CSC148H1F20169')
+        >>> user._get_course_info('CSC148H1F')
         """
 
         try:
-            page = PAGE + course_code
-            print(page)
+            page = str(PAGE + course_code + '%22&limit=1')
             pr = Request(page)
             pr.add_header('Authorization', 'TVwEIjRZP80vhnY8HhM0OzZCMfydh4lA')
 
             file = urlopen(pr)
             lines = file.read().decode('utf-8')
             lines = ast.literal_eval(lines)
-
-            return lines
+            print(lines)
+            return lines[0]
 
         except HTTPError:
             # If course does not exist
@@ -661,39 +374,222 @@ class User:
             print('No Internet!')
             return None
 
+    """Program Functions"""
 
-class Program:
-    def __init__(self, program_code):
-        # Make a text file of this pre-made
-        self.program_code = program_code
-        self.name = PROGRAMS[program_code]['name']
-        self.type = PROGRAMS[program_code]['type']
-        self.description = PROGRAMS[program_code]['description']
-        self.fce = PROGRAMS[program_code]['fce']
-        self.level1 = PROGRAMS[program_code][1]
-        self.level2 = PROGRAMS[program_code][2]
-        self.level3 = PROGRAMS[program_code][3]
-        self.level4 = PROGRAMS[program_code][4]
+    def add_program(self, program_code):
+        """
+        Adds a program to the user's profile
 
-        self.course_requirements = self.level1 + self.level2 + self.level3 + self.level4
+        @param str program_code: 
+        @return: NoneType
+        """
 
-    def __repr__(self):
-        return '{\'name\': \'' + str(self.name) + '\', \'id\': \'' + str(self.program_code) + '\', \'type\': \'' + str(self.type) + '\', \'description\': \'' + str(self.description) + '\', \'fce\': ' + str(self.fce) + ', 1: ' + str(self.level1) + ', 2: ' + str(self.level2) + ', 3: ' + str(self.level3) + ', 4: ' + str(self.level4) + '}'
+        # Only add if program is not already in
+        if program_code in PROGRAM_TREE:
+            if program_code not in self._program_list:
+                self._program_list.append(program_code)
 
+                # Update database
+                WORKSHEET.cell(column=4, row=self._user_row, value=str(self._program_list))
+                WORKBOOK.save(FILE_NAME)
+        else:
+            print('Invalid Program!')
 
-class ProgramNode:
-    def __init__(self, program_dict):
-        self.program_name = program_dict['name']
-        self.program_id = program_dict['id']
-        self.program_type = program_dict['type']
-        self.description = program_dict['description']
-        self.fce = program_dict['fce']
-        self.level1 = program_dict[1]
-        self.level2 = program_dict[2]
-        self.level3 = program_dict[3]
-        self.level4 = program_dict[4]
-        self.course_requirements = self.level1 + self.level2 + self.level3 + self.level4
-        self.courses = {}
+    def remove_program(self, program_code):
+        """
+        Delete a course from the list
+
+        @param str program_code: Code for the program 
+        @return: NoneType
+        """
+
+        try:
+            self._program_list.remove(program_code)
+
+            # Update database
+            WORKSHEET.cell(column=4, row=self._user_row, value=str(self._program_list))
+            WORKBOOK.save(FILE_NAME)
+        except ValueError:
+            print('Program does not exist')
+
+    def get_easiest(self, ratio=True):
+        """
+        Return easiest to get courses
+
+        @return: list
+        """
+        totals = {}
+
+        def eval_totals(totals, temp):
+            """
+            Add to the total need and have
+
+            @param dict of int totals: 
+            @param list of CourseNode | CourseNode temp: 
+            @return: 
+            """
+
+            if temp.requirement is True:
+                # If the group requirements have been met
+                totals[program][0] += temp.need
+                totals[program][1] += temp.need
+            else:
+                # If the group requirements have yet to be met
+                totals[program][0] += temp.need
+                totals[program][1] += temp.have
+
+            return totals
+
+        for program in self._user_program_tree:
+            # For each program
+            totals[program] = [0, 0]
+
+            for i in self._user_program_tree[program]:
+                # For each course
+                temp = self._user_program_tree[program][i]
+
+                if isinstance(temp, list):
+                    # If grouped courses
+                    for node in temp:
+                        totals.update(eval_totals(totals, node))
+
+                else:
+                    # If a CourseNode
+                    totals.update(eval_totals(totals, temp))
+
+        # Index 0: name, 1: need, 2: have, 3: ratio, 4: need-to-get
+        sorted_totals = [[i] + totals[i] for i in totals]
+        sorted_totals = [i + [i[2] / i[1]] + [i[1] - i[2]] for i in
+                         sorted_totals]
+
+        if ratio:
+            index = 3
+        else:
+            index = 4
+
+        sorted_totals.sort(reverse=True, key=lambda x: x[index])
+
+        return sorted_totals
+
+    def get_program_req(self, program_code):
+        """
+        Returns a dictionary of the currently needed courses for program <program_code>
+
+        @param str program_code:
+        @return: dict
+
+        >>> usr = User('Tim', 'Cosby')
+        >>> usr.get_program_req('ASMAJ1423')
+        {'BR5': CourseNode('BR5', 1.0, False, None), 'lists': [CourseNode(None, 2, False, {'ENG250Y1': CourseNode('ENG250Y1', 1, False, None), 'HIS271Y1': CourseNode('HIS271Y1', 1, False, None), 'GGR240H1': CourseNode('GGR240H1', 0.5, False, None), 'GGR254H1': CourseNode('GGR254H1', 0.5, False, None), 'POL203Y1': CourseNode('POL203Y1', 1, False, None)}), CourseNode(None, 9, False, {'USA300H1': CourseNode('USA300H1', 0.5, False, None), 'lists': [CourseNode(None, 1, False, {'USA310H1': CourseNode('USA310H1', 0.5, False, None), 'USA311H1': CourseNode('USA311H1', 0.5, False, None), 'USA312H1': CourseNode('USA312H1', 0.5, False, None), 'USA313H1': CourseNode('USA313H1', 0.5, False, None)}), CourseNode(None, 1, False, {'USA400H1': CourseNode('USA400H1', 0.5, False, None), 'USA401H1': CourseNode('USA401H1', 0.5, False, None), 'USA402H1': CourseNode('USA402H1', 0.5, False, None), 'USA403H1': CourseNode('USA403H1', 0.5, False, None)}), CourseNode(None, 1, False, {'CIN490Y1': CourseNode('CIN490Y1', 1, False, None), 'CIN491H1': CourseNode('CIN491H1', 0.5, False, None), 'CIN492H1': CourseNode('CIN492H1', 0.5, False, None)}), CourseNode(None, 1, False, {'ENG434H1': CourseNode('ENG434H1', 0.5, False, None), 'ENG435H1': CourseNode('ENG435H1', 0.5, False, None)})], 'ABS302H1': CourseNode('ABS302H1', 0.5, False, None), 'ABS341H1': CourseNode('ABS341H1', 0.5, False, None), 'ANT365H1': CourseNode('ANT365H1', 0.5, False, None), 'CIN310Y1': CourseNode('CIN310Y1', 1, False, None), 'CIN374Y1': CourseNode('CIN374Y1', 1, False, None), 'CIN334H1': CourseNode('CIN334H1', 0.5, False, None), 'DRM310H1': CourseNode('DRM310H1', 0.5, False, None), 'ENG360H1': CourseNode('ENG360H1', 0.5, False, None), 'ENG363Y1': CourseNode('ENG363Y1', 1, False, None), 'ENG364Y1': CourseNode('ENG364Y1', 1, False, None), 'ENG365H1': CourseNode('ENG365H1', 0.5, False, None), 'ENG368H1': CourseNode('ENG368H1', 0.5, False, None), 'ENG375Y1': CourseNode('ENG375Y1', 1, False, None), 'FAH375H1': CourseNode('FAH375H1', 0.5, False, None), 'GGR336H1': CourseNode('GGR336H1', 0.5, False, None), 'GGR339H1': CourseNode('GGR339H1', 0.5, False, None), 'HIS300H1': CourseNode('HIS300H1', 0.5, False, None), 'HIS310H1': CourseNode('HIS310H1', 0.5, False, None), 'HIS316H1': CourseNode('HIS316H1', 0.5, False, None), 'HIS343Y1': CourseNode('HIS343Y1', 1, False, None), 'HIS365H1': CourseNode('HIS365H1', 0.5, False, None), 'HIS366H1': CourseNode('HIS366H1', 0.5, False, None), 'HIS369H1': CourseNode('HIS369H1', 0.5, False, None), 'HIS370H1': CourseNode('HIS370H1', 0.5, False, None), 'HIS372H1': CourseNode('HIS372H1', 0.5, False, None), 'HIS373H1': CourseNode('HIS373H1', 0.5, False, None), 'HIS374H1': CourseNode('HIS374H1', 0.5, False, None), 'HIS375H1': CourseNode('HIS375H1', 0.5, False, None), 'HIS376H1': CourseNode('HIS376H1', 0.5, False, None), 'HIS377H1': CourseNode('HIS377H1', 0.5, False, None), 'HIS378H1': CourseNode('HIS378H1', 0.5, False, None), 'HIS389H1': CourseNode('HIS389H1', 0.5, False, None), 'HIS393H1': CourseNode('HIS393H1', 0.5, False, None), 'MUS306H1': CourseNode('MUS306H1', 0.5, False, None), 'POL300H1': CourseNode('POL300H1', 0.5, False, None), 'POL326Y1': CourseNode('POL326Y1', 1, False, None), 'RLG315H1': CourseNode('RLG315H1', 0.5, False, None), 'USA494H1': CourseNode('USA494H1', 0.5, False, None), 'USA495Y1': CourseNode('USA495Y1', 1, False, None), 'EAS474H1': CourseNode('EAS474H1', 0.5, False, None), 'ECO423H1': CourseNode('ECO423H1', 0.5, False, None), 'ENG438H1': CourseNode('ENG438H1', 0.5, False, None), 'HIS400H1': CourseNode('HIS400H1', 0.5, False, None), 'HIS401H1': CourseNode('HIS401H1', 0.5, False, None), 'HIS404H1': CourseNode('HIS404H1', 0.5, False, None), 'HIS408Y1': CourseNode('HIS408Y1', 1, False, None), 'HIS436H1': CourseNode('HIS436H1', 0.5, False, None), 'HIS447H1': CourseNode('HIS447H1', 0.5, False, None), 'HIS463H1': CourseNode('HIS463H1', 0.5, False, None), 'HIS473Y1': CourseNode('HIS473Y1', 1, False, None), 'HIS476H1': CourseNode('HIS476H1', 0.5, False, None), 'HIS478H1': CourseNode('HIS478H1', 0.5, False, None), 'HIS479H1': CourseNode('HIS479H1', 0.5, False, None), 'HIS484H1': CourseNode('HIS484H1', 0.5, False, None), 'HIS487H1': CourseNode('HIS487H1', 0.5, False, None), 'POL433H1': CourseNode('POL433H1', 0.5, False, None), 'RLG442H1': CourseNode('RLG442H1', 0.5, False, None), 'WGS435H1': CourseNode('WGS435H1', 0.5, False, None)}), CourseNode(None, 4, False, {'USA300H1': CourseNode('USA300H1', 0.5, False, None), 'lists': [CourseNode(None, 1, False, {'USA310H1': CourseNode('USA310H1', 0.5, False, None), 'USA311H1': CourseNode('USA311H1', 0.5, False, None), 'USA312H1': CourseNode('USA312H1', 0.5, False, None), 'USA313H1': CourseNode('USA313H1', 0.5, False, None)})], 'ABS302H1': CourseNode('ABS302H1', 0.5, False, None), 'ABS341H1': CourseNode('ABS341H1', 0.5, False, None), 'ANT365H1': CourseNode('ANT365H1', 0.5, False, None), 'CIN310Y1': CourseNode('CIN310Y1', 1, False, None), 'CIN374Y1': CourseNode('CIN374Y1', 1, False, None), 'CIN334H1': CourseNode('CIN334H1', 0.5, False, None), 'DRM310H1': CourseNode('DRM310H1', 0.5, False, None), 'ENG360H1': CourseNode('ENG360H1', 0.5, False, None), 'ENG363Y1': CourseNode('ENG363Y1', 1, False, None), 'ENG364Y1': CourseNode('ENG364Y1', 1, False, None), 'ENG365H1': CourseNode('ENG365H1', 0.5, False, None), 'ENG368H1': CourseNode('ENG368H1', 0.5, False, None), 'ENG375Y1': CourseNode('ENG375Y1', 1, False, None), 'FAH375H1': CourseNode('FAH375H1', 0.5, False, None), 'GGR336H1': CourseNode('GGR336H1', 0.5, False, None), 'GGR339H1': CourseNode('GGR339H1', 0.5, False, None), 'HIS300H1': CourseNode('HIS300H1', 0.5, False, None), 'HIS310H1': CourseNode('HIS310H1', 0.5, False, None), 'HIS316H1': CourseNode('HIS316H1', 0.5, False, None), 'HIS343Y1': CourseNode('HIS343Y1', 1, False, None), 'HIS365H1': CourseNode('HIS365H1', 0.5, False, None), 'HIS366H1': CourseNode('HIS366H1', 0.5, False, None), 'HIS369H1': CourseNode('HIS369H1', 0.5, False, None), 'HIS370H1': CourseNode('HIS370H1', 0.5, False, None), 'HIS372H1': CourseNode('HIS372H1', 0.5, False, None), 'HIS373H1': CourseNode('HIS373H1', 0.5, False, None), 'HIS374H1': CourseNode('HIS374H1', 0.5, False, None), 'HIS375H1': CourseNode('HIS375H1', 0.5, False, None), 'HIS376H1': CourseNode('HIS376H1', 0.5, False, None), 'HIS377H1': CourseNode('HIS377H1', 0.5, False, None), 'HIS378H1': CourseNode('HIS378H1', 0.5, False, None), 'HIS389H1': CourseNode('HIS389H1', 0.5, False, None), 'HIS393H1': CourseNode('HIS393H1', 0.5, False, None), 'MUS306H1': CourseNode('MUS306H1', 0.5, False, None), 'POL300H1': CourseNode('POL300H1', 0.5, False, None), 'POL326Y1': CourseNode('POL326Y1', 1, False, None), 'RLG315H1': CourseNode('RLG315H1', 0.5, False, None)}), CourseNode(None, 13, False, {'USA200H1': CourseNode('USA200H1', 0.5, False, None), 'USA300H1': CourseNode('USA300H1', 0.5, False, None), 'lists': [CourseNode(None, 1, False, {'USA310H1': CourseNode('USA310H1', 0.5, False, None), 'USA311H1': CourseNode('USA311H1', 0.5, False, None), 'USA312H1': CourseNode('USA312H1', 0.5, False, None), 'USA313H1': CourseNode('USA313H1', 0.5, False, None)}), CourseNode(None, 1, False, {'USA400H1': CourseNode('USA400H1', 0.5, False, None), 'USA401H1': CourseNode('USA401H1', 0.5, False, None), 'USA402H1': CourseNode('USA402H1', 0.5, False, None), 'USA403H1': CourseNode('USA403H1', 0.5, False, None)}), CourseNode(None, 1, False, {'CIN490Y1': CourseNode('CIN490Y1', 1, False, None), 'CIN491H1': CourseNode('CIN491H1', 0.5, False, None), 'CIN492H1': CourseNode('CIN492H1', 0.5, False, None)}), CourseNode(None, 1, False, {'ENG434H1': CourseNode('ENG434H1', 0.5, False, None), 'ENG435H1': CourseNode('ENG435H1', 0.5, False, None)})], 'USA494H1': CourseNode('USA494H1', 0.5, False, None), 'USA495Y1': CourseNode('USA495Y1', 1, False, None), 'ABS302H1': CourseNode('ABS302H1', 0.5, False, None), 'ABS341H1': CourseNode('ABS341H1', 0.5, False, None), 'ANT365H1': CourseNode('ANT365H1', 0.5, False, None), 'CIN270Y1': CourseNode('CIN270Y1', 1, False, None), 'CIN211H1': CourseNode('CIN211H1', 0.5, False, None), 'CIN230H1': CourseNode('CIN230H1', 0.5, False, None), 'CIN310Y1': CourseNode('CIN310Y1', 1, False, None), 'CIN374Y1': CourseNode('CIN374Y1', 1, False, None), 'CIN334H1': CourseNode('CIN334H1', 0.5, False, None), 'DRM310H1': CourseNode('DRM310H1', 0.5, False, None), 'EAS474H1': CourseNode('EAS474H1', 0.5, False, None), 'ECO423H1': CourseNode('ECO423H1', 0.5, False, None), 'ENG250Y1': CourseNode('ENG250Y1', 1, False, None), 'ENG254Y1': CourseNode('ENG254Y1', 1, False, None), 'ENG360H1': CourseNode('ENG360H1', 0.5, False, None), 'ENG363Y1': CourseNode('ENG363Y1', 1, False, None), 'ENG364Y1': CourseNode('ENG364Y1', 1, False, None), 'ENG365H1': CourseNode('ENG365H1', 0.5, False, None), 'ENG368H1': CourseNode('ENG368H1', 0.5, False, None), 'ENG375Y1': CourseNode('ENG375Y1', 1, False, None), 'ENG438H1': CourseNode('ENG438H1', 0.5, False, None), 'FAH375H1': CourseNode('FAH375H1', 0.5, False, None), 'GGR240H1': CourseNode('GGR240H1', 0.5, False, None), 'GGR254H1': CourseNode('GGR254H1', 0.5, False, None), 'GGR336H1': CourseNode('GGR336H1', 0.5, False, None), 'GGR339H1': CourseNode('GGR339H1', 0.5, False, None), 'HIS106Y1': CourseNode('HIS106Y1', 1, False, None), 'HIS202H1': CourseNode('HIS202H1', 0.5, False, None), 'HIS271Y1': CourseNode('HIS271Y1', 1, False, None), 'HIS300H1': CourseNode('HIS300H1', 0.5, False, None), 'HIS310H1': CourseNode('HIS310H1', 0.5, False, None), 'HIS316H1': CourseNode('HIS316H1', 0.5, False, None), 'HIS343Y1': CourseNode('HIS343Y1', 1, False, None), 'HIS365H1': CourseNode('HIS365H1', 0.5, False, None), 'HIS366H1': CourseNode('HIS366H1', 0.5, False, None), 'HIS369H1': CourseNode('HIS369H1', 0.5, False, None), 'HIS370H1': CourseNode('HIS370H1', 0.5, False, None), 'HIS372H1': CourseNode('HIS372H1', 0.5, False, None), 'HIS373H1': CourseNode('HIS373H1', 0.5, False, None), 'HIS374H1': CourseNode('HIS374H1', 0.5, False, None), 'HIS375H1': CourseNode('HIS375H1', 0.5, False, None), 'HIS376H1': CourseNode('HIS376H1', 0.5, False, None), 'HIS377H1': CourseNode('HIS377H1', 0.5, False, None), 'HIS378H1': CourseNode('HIS378H1', 0.5, False, None), 'HIS389H1': CourseNode('HIS389H1', 0.5, False, None), 'HIS393H1': CourseNode('HIS393H1', 0.5, False, None), 'HIS400H1': CourseNode('HIS400H1', 0.5, False, None), 'HIS401H1': CourseNode('HIS401H1', 0.5, False, None), 'HIS404H1': CourseNode('HIS404H1', 0.5, False, None), 'HIS408Y1': CourseNode('HIS408Y1', 1, False, None), 'HIS436H1': CourseNode('HIS436H1', 0.5, False, None), 'HIS447H1': CourseNode('HIS447H1', 0.5, False, None), 'HIS463H1': CourseNode('HIS463H1', 0.5, False, None), 'HIS473Y1': CourseNode('HIS473Y1', 1, False, None), 'HIS476H1': CourseNode('HIS476H1', 0.5, False, None), 'HIS478H1': CourseNode('HIS478H1', 0.5, False, None), 'HIS479H1': CourseNode('HIS479H1', 0.5, False, None), 'HIS484H1': CourseNode('HIS484H1', 0.5, False, None), 'HIS487H1': CourseNode('HIS487H1', 0.5, False, None), 'MUS306H1': CourseNode('MUS306H1', 0.5, False, None), 'POL203Y1': CourseNode('POL203Y1', 1, False, None), 'POL300H1': CourseNode('POL300H1', 0.5, False, None), 'POL326Y1': CourseNode('POL326Y1', 1, False, None), 'POL433H1': CourseNode('POL433H1', 0.5, False, None), 'RLG315H1': CourseNode('RLG315H1', 0.5, False, None), 'RLG442H1': CourseNode('RLG442H1', 0.5, False, None), 'WGS435H1': CourseNode('WGS435H1', 0.5, False, None), 'VIC132H1': CourseNode('VIC132H1', 0.5, False, None), 'VIC130H1': CourseNode('VIC130H1', 0.5, False, None)}), CourseNode(None, 4, False, {'lists': [CourseNode(None, 2, False, {'USA200H1': CourseNode('USA200H1', 0.5, False, None), 'USA300H1': CourseNode('USA300H1', 0.5, False, None), 'lists': [CourseNode(None, 1, False, {'USA310H1': CourseNode('USA310H1', 0.5, False, None), 'USA311H1': CourseNode('USA311H1', 0.5, False, None), 'USA312H1': CourseNode('USA312H1', 0.5, False, None), 'USA313H1': CourseNode('USA313H1', 0.5, False, None)}), CourseNode(None, 1, False, {'USA400H1': CourseNode('USA400H1', 0.5, False, None), 'USA401H1': CourseNode('USA401H1', 0.5, False, None), 'USA402H1': CourseNode('USA402H1', 0.5, False, None), 'USA403H1': CourseNode('USA403H1', 0.5, False, None)})], 'USA494H1': CourseNode('USA494H1', 0.5, False, None), 'USA495Y1': CourseNode('USA495Y1', 1, False, None)}), CourseNode(None, 2, False, {'ABS302H1': CourseNode('ABS302H1', 0.5, False, None), 'ABS341H1': CourseNode('ABS341H1', 0.5, False, None)}), CourseNode(None, 2, False, {'ANT365H1': CourseNode('ANT365H1', 0.5, False, None)}), CourseNode(None, 2, False, {'CIN270Y1': CourseNode('CIN270Y1', 1, False, None), 'CIN211H1': CourseNode('CIN211H1', 0.5, False, None), 'CIN230H1': CourseNode('CIN230H1', 0.5, False, None), 'CIN310Y1': CourseNode('CIN310Y1', 1, False, None), 'CIN374Y1': CourseNode('CIN374Y1', 1, False, None), 'CIN334H1': CourseNode('CIN334H1', 0.5, False, None), 'lists': [CourseNode(None, 1, False, {'CIN490Y1': CourseNode('CIN490Y1', 1, False, None), 'CIN491H1': CourseNode('CIN491H1', 0.5, False, None), 'CIN492H1': CourseNode('CIN492H1', 0.5, False, None)})]}), CourseNode(None, 2, False, {'DRM310H1': CourseNode('DRM310H1', 0.5, False, None)}), CourseNode(None, 2, False, {'EAS474H1': CourseNode('EAS474H1', 0.5, False, None)}), CourseNode(None, 2, False, {'ECO423H1': CourseNode('ECO423H1', 0.5, False, None)}), CourseNode(None, 2, False, {'ENG250Y1': CourseNode('ENG250Y1', 1, False, None), 'ENG254Y1': CourseNode('ENG254Y1', 1, False, None), 'ENG360H1': CourseNode('ENG360H1', 0.5, False, None), 'ENG363Y1': CourseNode('ENG363Y1', 1, False, None), 'ENG364Y1': CourseNode('ENG364Y1', 1, False, None), 'ENG365H1': CourseNode('ENG365H1', 0.5, False, None), 'ENG368H1': CourseNode('ENG368H1', 0.5, False, None), 'ENG375Y1': CourseNode('ENG375Y1', 1, False, None), 'lists': [CourseNode(None, 1, False, {'ENG434H1': CourseNode('ENG434H1', 0.5, False, None), 'ENG435H1': CourseNode('ENG435H1', 0.5, False, None)})], 'ENG438H1': CourseNode('ENG438H1', 0.5, False, None)}), CourseNode(None, 2, False, {'FAH375H1': CourseNode('FAH375H1', 0.5, False, None)}), CourseNode(None, 2, False, {'GGR240H1': CourseNode('GGR240H1', 0.5, False, None), 'GGR254H1': CourseNode('GGR254H1', 0.5, False, None), 'GGR336H1': CourseNode('GGR336H1', 0.5, False, None), 'GGR339H1': CourseNode('GGR339H1', 0.5, False, None)}), CourseNode(None, 2, False, {'HIS106Y1': CourseNode('HIS106Y1', 1, False, None), 'HIS202H1': CourseNode('HIS202H1', 0.5, False, None), 'HIS271Y1': CourseNode('HIS271Y1', 1, False, None), 'HIS300H1': CourseNode('HIS300H1', 0.5, False, None), 'HIS310H1': CourseNode('HIS310H1', 0.5, False, None), 'HIS316H1': CourseNode('HIS316H1', 0.5, False, None), 'HIS343Y1': CourseNode('HIS343Y1', 1, False, None), 'HIS365H1': CourseNode('HIS365H1', 0.5, False, None), 'HIS366H1': CourseNode('HIS366H1', 0.5, False, None), 'HIS369H1': CourseNode('HIS369H1', 0.5, False, None), 'HIS370H1': CourseNode('HIS370H1', 0.5, False, None), 'HIS372H1': CourseNode('HIS372H1', 0.5, False, None), 'HIS373H1': CourseNode('HIS373H1', 0.5, False, None), 'HIS374H1': CourseNode('HIS374H1', 0.5, False, None), 'HIS375H1': CourseNode('HIS375H1', 0.5, False, None), 'HIS376H1': CourseNode('HIS376H1', 0.5, False, None), 'HIS377H1': CourseNode('HIS377H1', 0.5, False, None), 'HIS378H1': CourseNode('HIS378H1', 0.5, False, None), 'HIS389H1': CourseNode('HIS389H1', 0.5, False, None), 'HIS393H1': CourseNode('HIS393H1', 0.5, False, None), 'HIS400H1': CourseNode('HIS400H1', 0.5, False, None), 'HIS401H1': CourseNode('HIS401H1', 0.5, False, None), 'HIS404H1': CourseNode('HIS404H1', 0.5, False, None), 'HIS408Y1': CourseNode('HIS408Y1', 1, False, None), 'HIS436H1': CourseNode('HIS436H1', 0.5, False, None), 'HIS447H1': CourseNode('HIS447H1', 0.5, False, None), 'HIS463H1': CourseNode('HIS463H1', 0.5, False, None), 'HIS473Y1': CourseNode('HIS473Y1', 1, False, None), 'HIS476H1': CourseNode('HIS476H1', 0.5, False, None), 'HIS478H1': CourseNode('HIS478H1', 0.5, False, None), 'HIS479H1': CourseNode('HIS479H1', 0.5, False, None), 'HIS484H1': CourseNode('HIS484H1', 0.5, False, None), 'HIS487H1': CourseNode('HIS487H1', 0.5, False, None)}), CourseNode(None, 2, False, {'HIS106Y1': CourseNode('HIS106Y1', 1, False, None), 'HIS202H1': CourseNode('HIS202H1', 0.5, False, None), 'HIS271Y1': CourseNode('HIS271Y1', 1, False, None), 'HIS300H1': CourseNode('HIS300H1', 0.5, False, None), 'HIS310H1': CourseNode('HIS310H1', 0.5, False, None), 'HIS316H1': CourseNode('HIS316H1', 0.5, False, None), 'HIS343Y1': CourseNode('HIS343Y1', 1, False, None), 'HIS365H1': CourseNode('HIS365H1', 0.5, False, None), 'HIS366H1': CourseNode('HIS366H1', 0.5, False, None), 'HIS369H1': CourseNode('HIS369H1', 0.5, False, None), 'HIS370H1': CourseNode('HIS370H1', 0.5, False, None), 'HIS372H1': CourseNode('HIS372H1', 0.5, False, None), 'HIS373H1': CourseNode('HIS373H1', 0.5, False, None), 'HIS374H1': CourseNode('HIS374H1', 0.5, False, None), 'HIS375H1': CourseNode('HIS375H1', 0.5, False, None), 'HIS376H1': CourseNode('HIS376H1', 0.5, False, None), 'HIS377H1': CourseNode('HIS377H1', 0.5, False, None), 'HIS378H1': CourseNode('HIS378H1', 0.5, False, None), 'HIS389H1': CourseNode('HIS389H1', 0.5, False, None), 'HIS393H1': CourseNode('HIS393H1', 0.5, False, None), 'HIS400H1': CourseNode('HIS400H1', 0.5, False, None), 'HIS401H1': CourseNode('HIS401H1', 0.5, False, None), 'HIS404H1': CourseNode('HIS404H1', 0.5, False, None), 'HIS408Y1': CourseNode('HIS408Y1', 1, False, None), 'HIS436H1': CourseNode('HIS436H1', 0.5, False, None), 'HIS447H1': CourseNode('HIS447H1', 0.5, False, None), 'HIS463H1': CourseNode('HIS463H1', 0.5, False, None), 'HIS473Y1': CourseNode('HIS473Y1', 1, False, None), 'HIS476H1': CourseNode('HIS476H1', 0.5, False, None), 'HIS478H1': CourseNode('HIS478H1', 0.5, False, None), 'HIS479H1': CourseNode('HIS479H1', 0.5, False, None), 'HIS484H1': CourseNode('HIS484H1', 0.5, False, None), 'HIS487H1': CourseNode('HIS487H1', 0.5, False, None)}), CourseNode(None, 2, False, {'MUS306H1': CourseNode('MUS306H1', 0.5, False, None)}), CourseNode(None, 2, False, {'POL203Y1': CourseNode('POL203Y1', 1, False, None), 'POL300H1': CourseNode('POL300H1', 0.5, False, None), 'POL326Y1': CourseNode('POL326Y1', 1, False, None), 'POL433H1': CourseNode('POL433H1', 0.5, False, None)}), CourseNode(None, 2, False, {'RLG315H1': CourseNode('RLG315H1', 0.5, False, None), 'RLG442H1': CourseNode('RLG442H1', 0.5, False, None)}), CourseNode(None, 2, False, {'WGS435H1': CourseNode('WGS435H1', 0.5, False, None)}), CourseNode(None, 2, False, {'VIC132H1': CourseNode('VIC132H1', 0.5, False, None), 'VIC130H1': CourseNode('VIC130H1', 0.5, False, None)})]}), CourseNode(None, 1, False, {'lists': [CourseNode(None, 1, False, {'USA400H1': CourseNode('USA400H1', 0.5, False, None), 'USA401H1': CourseNode('USA401H1', 0.5, False, None), 'USA402H1': CourseNode('USA402H1', 0.5, False, None), 'USA403H1': CourseNode('USA403H1', 0.5, False, None)}), CourseNode(None, 1, False, {'CIN490Y1': CourseNode('CIN490Y1', 1, False, None), 'CIN491H1': CourseNode('CIN491H1', 0.5, False, None), 'CIN492H1': CourseNode('CIN492H1', 0.5, False, None)}), CourseNode(None, 1, False, {'ENG434H1': CourseNode('ENG434H1', 0.5, False, None), 'ENG435H1': CourseNode('ENG435H1', 0.5, False, None)})], 'USA494H1': CourseNode('USA494H1', 0.5, False, None), 'USA495Y1': CourseNode('USA495Y1', 1, False, None), 'EAS474H1': CourseNode('EAS474H1', 0.5, False, None), 'ECO423H1': CourseNode('ECO423H1', 0.5, False, None), 'ENG438H1': CourseNode('ENG438H1', 0.5, False, None), 'HIS400H1': CourseNode('HIS400H1', 0.5, False, None), 'HIS401H1': CourseNode('HIS401H1', 0.5, False, None), 'HIS404H1': CourseNode('HIS404H1', 0.5, False, None), 'HIS408Y1': CourseNode('HIS408Y1', 1, False, None), 'HIS436H1': CourseNode('HIS436H1', 0.5, False, None), 'HIS447H1': CourseNode('HIS447H1', 0.5, False, None), 'HIS463H1': CourseNode('HIS463H1', 0.5, False, None), 'HIS473Y1': CourseNode('HIS473Y1', 1, False, None), 'HIS476H1': CourseNode('HIS476H1', 0.5, False, None), 'HIS478H1': CourseNode('HIS478H1', 0.5, False, None), 'HIS479H1': CourseNode('HIS479H1', 0.5, False, None), 'HIS484H1': CourseNode('HIS484H1', 0.5, False, None), 'HIS487H1': CourseNode('HIS487H1', 0.5, False, None), 'POL433H1': CourseNode('POL433H1', 0.5, False, None), 'RLG442H1': CourseNode('RLG442H1', 0.5, False, None), 'WGS435H1': CourseNode('WGS435H1', 0.5, False, None)})], 'USA300H1': CourseNode('USA300H1', 0.5, False, None)}
+        """
+        return self._user_program_tree[program_code]
+
+    def get_programs(self):
+        """
+        Return a list of taken programs
+
+        >>> usr = User('Tim', 'Cosby')
+        >>> usr.add_program('ASMAJ0135')
+        >>> usr.get_programs()
+        ['ASMAJ0135']
+        """
+        return self._program_list
+
+    def get_program_name(self, program_code):
+        return self._program_tree[program_code]['name']
+
+    def get_program_type(self, program_code):
+        return self._program_tree[program_code]['type']
+
+    def get_program_description(self, program_code):
+        return self._program_tree[program_code]['description']
+
+    def _update_inner_nodes(self, root=None):
+        """
+        Update node if not a leaf and has met the requirements of the node
+        Note: Only used by _update_program_nodes
+
+        @param dict root: 
+        @return: NoneType
+        """
+
+        for child in root:
+            # For CourseNode in dict
+            if child.course_code is None:
+                # If child is a node, get the total credits from its child courses
+                child.have = self._update_program_nodes(root=child.children)
+
+                if child.have >= child.need:
+                    # If the sum credits from its child courses satisfies its requirements
+                    child.requirement = True
+
+    def _update_program_nodes(self, root=None):
+        """
+        Update nodes in the program tree to accommodate for changes
+        to courses
+        Note: Nodes are only groups of courses
+              Single courses are leafs
+
+        @param None | dict root: root dictionary looking 
+        @return: int
+
+        {<Program Name>: {'lists': [CourseNode(None, 2, False, {'CSC108H1': CourseNode('CSC108H1', 1, False, None), 'CSC148H1': CourseNode('CSC148H1', 1, False, None)}]}}
+        *Takes CSC108*
+        {<Program Name>: {'lists': [CourseNode(None, 2, False, {'CSC108H1': CourseNode('CSC108H1', 1, True, None), 'CSC148H1': CourseNode('CSC148H1', 1, False, None)}]}}
+        *Takes CSC148*
+        {<Program Name>: {'lists': [CourseNode(None, 2, True, {'CSC108H1': CourseNode('CSC108H1', 1, True, None), 'CSC148H1': CourseNode('CSC148H1', 1, True, None)}]}}
+        Note: Node gets updated to True as the internal courses met its requirements of 2 credits
+        """
+        total = 0
+
+        if root is None:
+            # If first iteration
+            for program in self._user_program_tree:
+                # Recurse through every program
+                self._update_program_nodes(root=self._user_program_tree[program])
+
+        else:
+            # If a single program or node dict
+            try:
+                # Tries to recurse through the groups of courses
+                self._update_inner_nodes(root=root['lists'])
+
+                # Adds up the total credits taken in the group
+                total += sum(
+                    [i.need for i in root['lists'] if i.requirement is True])
+
+            except KeyError:
+                pass
+
+            # Adds up the total single credits taken in the dictionary
+            total += sum([root[i].need for i in root if
+                          i != 'list' and isinstance(root[i], CourseNode) and
+                          root[i].requirement is True])
+
+            return total
+
+    def _update_program_course(self, course, add):
+        """
+        Updates the tree with new requirements
+        aka add or remove a course taken value from tree
+
+        @param str course: course code
+        @param bool add: True if adding False if removing 
+        @return: 
+        """
+        # Later make this only for if course is Completed
+        # Make a system to update breadth requirements
+
+        try:
+            if add:
+                # Completes requirement
+                self._program_course_cache[course].requirement = True
+            else:
+                # Uncompletes requirement
+                self._program_course_cache[course].requirement = False
+
+        except KeyError:
+            pass
 
 
 if __name__ == '__main__':
@@ -710,7 +606,8 @@ if __name__ == '__main__':
             break
 
     while True:
-        details.add_course('MAT235Y1Y20169', 'L0101', 'C', 50)
+        #print(details.get_program_req('ASMAJ0135'))
+        print([i.ccode for i in details.get_courses()])
         print(details.get_easiest())
         course_code = input('Enter a course: ')
         ctype = input('Type: ')
@@ -720,8 +617,8 @@ if __name__ == '__main__':
         if course_code != '' and ctype != '' and cmark != '' and lecture_code != '':
             details.add_course(course_code, lecture_code=lecture_code, ctype=ctype, cmark=float(cmark))
 
-            if details._course_list[course_code[:3]][course_code[3:6]].lecture_code is None:
-                del details._course_list[course_code[:3]][course_code[3:6]]
+        #    if details._course_list[course_code[:3]][course_code[3:6]].lecture_code is None:
+        #        del details._course_list[course_code[:3]][course_code[3:6]]
 
         #print(details.get_breadths())
         #print(details.get_total_credits())
