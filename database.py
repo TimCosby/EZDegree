@@ -170,9 +170,9 @@ class User:
                 if course_code[3:6] in self._course_list[course_code[:3]]:
                     # If code is already in the list - modify
                     self._course_list[course_code[:3]][course_code[3:6]].modify(lecture_code=lecture_code, ctype=ctype, cmark=cmark)
-                #else:
-                #    # If not in list, add to list
-                #    self._course_list[course_code[:3]].update({course_code[3:6]: Course(course_info, lecture_code=lecture_code, ctype=ctype, cmark=cmark)})
+                else:
+                    # If course prefix but not code is already in the list, add to list
+                    self._course_list[course_code[:3]].update({course_code[3:6]: Course(course_info, lecture_code=lecture_code, ctype=ctype, cmark=cmark)})
 
             except KeyError:
                 # If node does not exist
@@ -180,7 +180,7 @@ class User:
 
             WORKSHEET.cell(column=3, row=self._user_row, value=str(self._course_list))
 
-            self._update_program_course(course_code[:8], True)
+            self._update_program_course(self._course_list[course_code[:3]][course_code[3:6]])
             self._update_program_nodes()
 
             WORKBOOK.save(FILE_NAME)
@@ -195,14 +195,13 @@ class User:
         @param str course_code: Course code (ie. CSC148) 
         @return: NoneType
         """
+
+        self._update_program_course(self._course_list[course_code[:3]][course_code[3:6]], False)
         del self._course_list[course_code[:3]][course_code[3:6]]
+        self._update_program_nodes()
 
         # Update database
         WORKSHEET.cell(column=3, row=self._user_row, value=str(self._course_list))
-
-        self._update_program_course(course_code[:8], False)
-        self._update_program_nodes()
-
         WORKBOOK.save(FILE_NAME)
 
     def get_loggedin(self):
@@ -243,11 +242,10 @@ class User:
 
             for breadth in course.breadths:
                 # C for completed
-                if course_type == 'C':
-                    breadth_totals['Taken'][breadth - 1] += 1
-                # P for planned, A for active
-                elif course_type == 'P' or course_type == 'A':
-                    breadth_totals['Planned'][breadth - 1] += 1
+                if course_type == 'p':
+                    breadth_totals['Planned'][breadth - 1] += course.cworth
+                elif not (course_type == 'c' and course.cmark > 50) and course_type != 'd':
+                    breadth_totals['Taken'][breadth - 1] += course.cworth
 
         return breadth_totals
 
@@ -260,39 +258,41 @@ class User:
 
         courses = self.get_courses()
         for course in courses:
+            if course.ctype != 'd':
+                # If the course wasn't dropped
 
-            mark = course.cmark
-            if mark > 84:
-                grade_point = 4.0
-            elif mark > 79:
-                grade_point = 3.7
-            elif mark > 76:
-                grade_point = 3.3
-            elif mark > 72:
-                grade_point = 3.0
-            elif mark > 69:
-                grade_point = 2.7
-            elif mark > 66:
-                grade_point = 2.3
-            elif mark > 62:
-                grade_point = 2.0
-            elif mark > 59:
-                grade_point = 1.7
-            elif mark > 56:
-                grade_point = 1.3
-            elif mark > 52:
-                grade_point = 1.0
-            elif mark > 49:
-                grade_point = 0.7
-            else:
-                grade_point = 0
+                mark = course.cmark
+                if mark > 84:
+                    grade_point = 4.0
+                elif mark > 79:
+                    grade_point = 3.7
+                elif mark > 76:
+                    grade_point = 3.3
+                elif mark > 72:
+                    grade_point = 3.0
+                elif mark > 69:
+                    grade_point = 2.7
+                elif mark > 66:
+                    grade_point = 2.3
+                elif mark > 62:
+                    grade_point = 2.0
+                elif mark > 59:
+                    grade_point = 1.7
+                elif mark > 56:
+                    grade_point = 1.3
+                elif mark > 52:
+                    grade_point = 1.0
+                elif mark > 49:
+                    grade_point = 0.7
+                else:
+                    grade_point = 0
 
-            if course.ccode[-1] == 'Y':
-                total += 1 * grade_point
-                credits += 1
-            else:
-                total += .5 * grade_point
-                credits += .5
+                if course.cworth:
+                    total += 1 * grade_point
+                    credits += 1
+                else:
+                    total += .5 * grade_point
+                    credits += .5
 
         if total != 0:
             return total / credits
@@ -309,17 +309,10 @@ class User:
         courses = self.get_courses()
 
         for course in courses:
-            if course.ccode[-1] == 'Y':
-                if course.ctype == 'C':
-                    total['Taken'] += 1
-                elif course.ctype == 'P' or course.ctype == 'A':
-                    total['Planned'] += 1
-
-            else:
-                if course.ctype == 'C':
-                    total['Taken'] += .5
-                elif course.ctype == 'P' or course.ctype == 'A':
-                    total['Planned'] += .5
+            if course.ctype == 'p':
+                total['Planned'] += course.cworth
+            elif course.ctype != 'd' and not (course.ctype == 'c' and course.cmark < 50):
+                total['Taken'] += course.cworth
 
         return total
 
@@ -340,7 +333,7 @@ class User:
                 self._course_list[key][item] = Course(temp[key][item][0], lecture_code=temp[key][item][1], ctype=temp[key][item][2], cmark=float(temp[key][item][3]))
 
                 # Tell the tree that the course is taken
-                self._update_program_course(temp[key][item][0]['code'][:-1], True)
+                self._update_program_course(self._course_list[key][item], True)
 
         # Update the nodes in the tree for the new course additions
         self._update_program_nodes()
@@ -469,17 +462,10 @@ class User:
                 # If a level requirement exists
                 fce_temp = [0, 0, 0, 0]  # Levels [1, 2, 3, 4]
 
-                for course in [course.ccode for course in self.get_courses()]:
+                for course in self.get_courses():
                     # For every course taken
 
-                    if course[-2] == 'Y':
-                        # If year course
-                        credit = 1
-                    else:
-                        # If half course
-                        credit = .5
-
-                    fce_temp[int(course[3]) - 1] += credit
+                    fce_temp[int(course.ccode[3]) - 1] += course.cworth
 
                 for index in range(4):
                     # For each level requirement
@@ -602,29 +588,57 @@ class User:
 
             return total
 
-    def _update_program_course(self, course, add):
+    def _update_program_course(self, course, add=True):
         """
         Updates the tree with new requirements
         aka add or remove a course taken value from tree
 
-        @param str course: course code
+        Note: Only adds courses if they have not been failed or dropped
+
+        @param Course course: Course's object
         @param bool add: True if adding False if removing 
-        @return: 
+        @return: NoneType
         """
-        # Later make this only for if course is Completed
-        # Make a system to update breadth requirements
+
         # If there is a **** course in cache, search up if the inputted course also meets the requirements (Would need to just update its have category if it doesn't)
 
         try:
-            if add:
-                # Completes requirement
-                self._program_course_cache[course].requirement = True
-            else:
-                # Uncompletes requirement
-                self._program_course_cache[course].requirement = False
+            cached_couse = self._program_course_cache[course.ccode[:-1]]
 
+            if course.ctype == 'd' or (course.ctype == 'c' and course.cmark < 50) or not add:
+                # If dropped or have a failing grade or removing
+                cached_couse.requirement = False
+            else:
+                # Completes requirement
+                cached_couse.requirement = True
         except KeyError:
             pass
+
+        self._update_breadths()
+
+    def _update_breadths(self):
+        """
+        Update breadth requirements in the tree
+        Ex: BR5 after adding a course with Breadth 5
+        
+        @return: NoneType
+        """
+
+        breadths = self.get_breadths()
+
+        for index in range(1, 6):
+            try:
+                breadth_node = self._program_course_cache['BR' + str(index)]
+
+                breadth_node.have = breadths['Taken'][index-1] + breadths['Planned'][index-1]
+
+                if breadth_node.have >= breadth_node.need:
+                    breadth_node.requirement = True
+                else:
+                    breadth_node.requirement = False
+            except KeyError:
+                pass
+
 
 
 if __name__ == '__main__':
