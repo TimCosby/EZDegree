@@ -3,6 +3,7 @@ from Course import Courses
 from ast import literal_eval
 from openpyxl import load_workbook
 from Authentication import authenticate
+from copy import deepcopy
 
 '''
 TODO:
@@ -14,7 +15,7 @@ TODO:
 '''
 
 DEFAULT_PROGRAMS = {}
-FILE_NAME = 'database.xlsx'
+FILE_NAME = 'data\\database.xlsx'
 PAGE = 'https://cobalt.qas.im/api/1.0/courses/filter?q=code:%22'
 KEY = 'TVwEIjRZP80vhnY8HhM0OzZCMfydh4lA'
 WORKBOOK = load_workbook(FILE_NAME)
@@ -51,16 +52,62 @@ initial_setup()
 
 
 class User:
+    """
+    A unique-user interactive interface
+    
+    Public Attributes:
+    =================
+        @param str username: 
+            User's username
+    
+    Private Attributes:
+    ==================
+        @param bool _logged_in: 
+            Whether or not the user successfully logged in
+        @param Courses _courses:
+            A Courses object containing all functions towards courses
+        @param dict _taken_courses:
+            A dictionary of Course objects that the user has added
+        @param dict _programs:
+            A dictionary of program codes that the user has added
+    """
     def __init__(self, username, password):
         if not authenticate(username, password, USERS, WORKBOOK, WORKSHEET):
-            self.logged_in = False
+            self._logged_in = False
         else:
-            self.logged_in = True
+            self._logged_in = True
             self.username = username
 
             self._courses = Courses()
             self._taken_courses = {}
             self._programs = {}
+
+            self.initial_courses()
+            self.initial_programs()
+
+    def logged_in(self):
+        return self._logged_in
+
+    def get_easiest(self):
+        values = {'percentage': [], 'completed': []}
+        for program in DEFAULT_PROGRAMS:
+            temp = convert_to_requirement(deepcopy(DEFAULT_PROGRAMS[program]['requirements']), self._courses)
+
+            percentage = (temp.have[1] / temp.need) * 100
+            completed = temp.need - temp.have[1]
+
+            values['percentage'].append([DEFAULT_PROGRAMS[program]['name'], percentage])
+            values['completed'].append([DEFAULT_PROGRAMS[program]['name'], completed])
+
+        values['percentage'].sort(key=lambda x: x[1])
+        values['completed'] = sorted(values['completed'], reverse=False, key=lambda x: x[1])
+        return values
+
+    def get_courses(self):
+        return self._taken_courses
+
+    def get_course(self, course_code):
+        return self._taken_courses[course_code]
 
     def add_course(self, course_code):
         # Collective courses
@@ -84,6 +131,9 @@ class User:
         WORKSHEET.cell(column=2, row=USERS[self.username], value=[[course.course_code, course.type, course.mark] for course in self._taken_courses.values()])
         WORKBOOK.save(FILE_NAME)
 
+    def get_mark(self, course_code):
+        return self._taken_courses[course_code].mark
+
     def set_mark(self, course_code, mark):
         try:
             self._courses.change_mark(course_code, mark)
@@ -93,8 +143,14 @@ class User:
         except KeyError:
             print('Course does not exist!')
 
+    def get_type(self, course_code):
+        return self._taken_courses[course_code].type
+
     def set_type(self, course_code, type):
         try:
+            if type == 'Completed' and self._taken_courses[course_code] < 50:
+                type = 'Failed'
+
             self._courses.change_type(course_code, type)
 
             WORKSHEET.cell(column=2, row=USERS[self.username], value=str([[course.course_code, course.type, course.mark] for course in self._taken_courses.values()]))
@@ -102,21 +158,89 @@ class User:
         except KeyError:
             print('Course does not exist!')
 
-    def add_program(self, program_code):
-        self._programs[program_code] = DEFAULT_PROGRAMS[program_code]
-        self._programs[program_code]['requirements'] = convert_to_requirement(DEFAULT_PROGRAMS[program_code]['requirements'], self._courses)
+    def get_cgpa(self):
+        total = 0
+        credits = 0
 
-        WORKSHEET.cell(column=3, row=USERS[self.username], value=str(list(self._programs.keys())))
-        WORKBOOK.save(FILE_NAME)
+        for course in self._taken_courses:
+            if course.type != 'Dropped':
+                # If the course wasn't dropped
+
+                mark = course.mark
+                if mark > 84:
+                    grade_point = 4.0
+                elif mark > 79:
+                    grade_point = 3.7
+                elif mark > 76:
+                    grade_point = 3.3
+                elif mark > 72:
+                    grade_point = 3.0
+                elif mark > 69:
+                    grade_point = 2.7
+                elif mark > 66:
+                    grade_point = 2.3
+                elif mark > 62:
+                    grade_point = 2.0
+                elif mark > 59:
+                    grade_point = 1.7
+                elif mark > 56:
+                    grade_point = 1.3
+                elif mark > 52:
+                    grade_point = 1.0
+                elif mark > 49:
+                    grade_point = 0.7
+                else:
+                    grade_point = 0
+
+                if course.weight == 1:
+                    total += 1 * grade_point
+                    credits += 1
+                else:
+                    total += .5 * grade_point
+                    credits += .5
+
+        if total != 0:
+            return total / credits
+        return 0.0
+
+    def add_program(self, program_code):
+        if program_code not in self._programs:
+            program = deepcopy(DEFAULT_PROGRAMS[program_code])
+            self._programs[program_code] = program
+            self._programs[program_code]['requirements'] = convert_to_requirement(program['requirements'], self._courses)
+
+            WORKSHEET.cell(column=3, row=USERS[self.username], value=str(list(self._programs.keys())))
+            WORKBOOK.save(FILE_NAME)
+        else:
+            print('Program already added!')
+
+    def get_programs(self):
+        return self._programs
+
+    def get_program(self, program_code):
+        return self._programs[program_code]
 
     def remove_program(self, program_code):
-        self._programs.pop(program_code)
+        try:
+            self._programs.pop(program_code)
+        except KeyError:
+            print('Program does not exist!')
 
         WORKSHEET.cell(column=3, row=USERS[self.username], value=str(list(self._programs.keys())))
         WORKBOOK.save(FILE_NAME)
 
     def get_program_requirements(self, program_code):
         return self._programs[program_code]['requirements']
+
+    def initial_courses(self):
+        for course_info in literal_eval(WORKSHEET.cell(column=2, row=USERS[self.username]).value):
+            self.add_course(course_info[0])
+            self.set_type(course_info[0], course_info[1])
+            self.set_mark(course_info[0], course_info[2])
+
+    def initial_programs(self):
+        for program_code in literal_eval(WORKSHEET.cell(column=3, row=USERS[self.username]).value):
+            self.add_program(program_code)
 
 
 def convert_to_requirement(requirements, courses, exclusions=None):
@@ -170,11 +294,13 @@ if __name__ == '__main__':
     while True:
         usr = User(input('Username: ').lower(), input('Password: '))
 
-        if usr.logged_in:
+        if usr.logged_in():
             break
         else:
             del usr
 
-    usr.add_program('ASSPE1689')
-    usr.add_course('CSC148H1')
+    usr.add_program('ASMAJ1689')
+    usr.add_course('CSC108H1')
     print(usr.get_program_requirements('ASSPE1689'))
+    print(usr.get_program_requirements('ASMAJ1689'))
+    print(usr.get_easiest())
