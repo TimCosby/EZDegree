@@ -1,156 +1,87 @@
+
+class Courses:
+    def __init__(self):
+        self.course_cache = {}
+
+    def add_course(self, course_code, exclusions=None):
+        self.course_cache[course_code] = Course(course_code, self.course_cache, exclusions)
+
+    def remove_course(self, course_code):
+        try:
+            self.course_cache.pop(course_code)
+        except KeyError:
+            print('Course doesn\'t exist!')
+
+    def change_mark(self, course_code, mark):
+        self.course_cache[course_code].mark = mark
+
+    def change_type(self, course_code, type):
+        self.course_cache[course_code].type = type
+
+    def __repr__(self):
+        return str(self.course_cache)
+
+
+def is_same(string, other):
+    """
+    For abstract courses (ie. 'CSC4****')
+
+    @param str string: Abstract Course code 
+    @param str other: Another Course code
+    @return: bool
+    """
+    if len(string) == len(other):
+        if '*' not in other:
+            same = True
+            for index in range(len(string)):
+                if string[index] != '*':
+                    if string[index] != other[index]:
+                        same = False
+                        break
+            if same:
+                return True
+    return False
+
+
 class Course:
-    """
-    Creates Course Object
+    def __init__(self, code, course_cache, exclusions):
+        self.course_code = code
+        self.mark = 0
+        self.type = 'Planned'
 
-    Attributes:
-    ===========
-        @param dict _course_info:
-                    All Course Info
-        @param str ctype:
-                    Current course process (ie. passed/failed)
-        @param float cmark:
-                    Mark for the course
-        @param str ccode:
-                    Course code
-        @param str cname:
-                    Course name
-        @param str desc:
-                    Course description
-        @param str term:
-                    Course term
-        @param str div:
-                    Arts&Sci/Engineering/Music
-        @param str department:
-                    Department of course (ie. Computer Science)
-        @param str prerequisites:
-                    Pre-requisites for the course
-        @param str exclusions:
-                    Exclusions for the course
-        @param int level:
-                    Course level (ie. 100/200/etc)
-        @param str campus:
-                    What campus the course is on
-        @param str lecture_code:
-                    Lecture code user is in (ie. L0101)
-        @param int lecture_size:
-                    Size of lecture
-        @param list of dict lecture_times:
-                    List of lecture dates, times, and places
-        @param list lecture_instructors:
-                    List of profs
-        @param list of int breadths:
-                    List of what breadth(s) value the course has
-    """
-    def __init__(self, course_info, lecture_code, ctype, cmark):
-        self._course_info = course_info
-        self.ctype = ctype
-        self.cmark = cmark
-        self.ccode = course_info['code']
-        self.cname = course_info['name']
-        self.desc = course_info['description']
-        self.term = course_info['term']
-        self.div = course_info['division']
-        self.department = course_info['department']
-        self.prerequisites = course_info['prerequisites']
-        self.exclusions = course_info['exclusions']
-        self.level = course_info['level']
-        self.campus = course_info['campus']
-
-
-        if self.ccode[6] == 'Y':
-            self.cworth = 1.0
+        if code[6] == 'Y':
+            self.weight = 1
         else:
-            self.cworth = 0.5
+            self.weight = 0.5
 
-        lecture_info = self._find_lecture(lecture_code)
+        self.exclusions = exclusions
+        self.course_cache = course_cache
 
-        if lecture_info is not None:
-            self.lecture_code = lecture_code
-            self.lecture_size = lecture_info['size']
-            self.lecture_times = lecture_info['times']
-            self.lecture_instructors = lecture_info['instructors']
+        self.breadth = None  # Not yet implemented
+
+    def _passed(self):
+        if '*' in self.course_code:
+            # If an abstract course
+            for course in self.course_cache:
+                if is_same(self.course_code, course) and self.course_cache[course].passed:
+                    return True
+            return False
+
+        elif self.course_code[:2] == 'BR':
+            # If a certain breadth # is required is required
+            total_breath = 0
+            needed_breadth = int(self.course_code[3])
+            for course in self.course_cache:
+                if self.course_cache[course].breadth == self.course_code[2]:
+                    total_breath += 1
+                    if total_breath >= needed_breadth:
+                        return True
+            return False
+
         else:
-            print('Invalid course lecture!')
+            return self.mark >= 50
 
-        self.breadths = course_info['breadths']
-
-    def modify(self, lecture_code=None, ctype=None, cmark=None):
-        """
-        Modifies the course's type and mark values
-
-        @param str lecture_code: Updated Lecture code
-        @param str | None ctype: Updated Course Process
-        @param float | None cmark: Updated Mark
-        @return: None
-        """
-
-        # If lecture is changed
-        if lecture_code is not None:
-            lecture_info = self._find_lecture(lecture_code)
-
-            # If lecture exists, update values
-            if lecture_info is not None:
-                self.lecture_code = lecture_info['code']
-                self.lecture_size = lecture_info['size']
-                self.lecture_times = lecture_info['times']
-                self.lecture_instructors = lecture_info['instructors']
-            else:
-                print('Invalid course lecture!')
-
-        if ctype is not None:
-            self.ctype = ctype
-
-        if cmark is not None:
-            self.cmark = cmark
+    passed = property(_passed)
 
     def __repr__(self):
-        return '(' + str(self._course_info) + ', \'' + str(self.lecture_code) + '\', \'' + str(self.ctype) + '\', ' + str(self.cmark) + ')'
-
-    def _find_lecture(self, lecture_code):
-        """
-        Find if lecture code is valid
-        Return lecture if valid
-        Return None if invalid
-         
-        @param str lecture_code: Lecture code 
-        @return: list of dict | None
-        """
-
-        for lecture in self._course_info['meeting_sections']:
-            # If lecture exists
-            if lecture['code'] == lecture_code:
-                # If entered lecture code is in
-                return lecture
-
-        return None
-
-class CourseNode:
-    """
-    Used in relation for program tree
-    """
-
-    def __init__(self, course_code, need=.5, requirement=False, children=None):
-        self.course_code = course_code
-        self.need = need
-        self.have = 0
-        self.requirement = requirement
-        self.children = children
-
-    def _get_have(self, courses, list_=None):
-        if self.children is None:
-            if self.course_code in courses:
-                return 1
-            else:
-                return 0
-
-        elif list_ is None:
-            return [i for i in self.children].count(1)
-
-        else:
-            return [i for i in list_].count(1)
-
-    def completed(self, courses):
-        return self.requirement == self._get_have(courses)
-
-    def __repr__(self):
-        return ('CourseNode(' + str(self.course_code) + ', ' + str(self.need) + ', ' + str(self.requirement) + ', ' + str(self.children) + ')')
+        return 'Course(' + self.course_code + ')'
