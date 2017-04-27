@@ -58,6 +58,7 @@ class Course:
         self.course_cache = course_cache
 
         self.breadth = None  # Not yet implemented
+        self.time = None  # Not yet implemented
 
     def _passed(self):
         if '*' in self.course_code:
