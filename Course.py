@@ -60,29 +60,45 @@ class Course:
         self.breadth = None  # Not yet implemented
         self.time = None  # Not yet implemented
 
-    def _passed(self):
+    def passed(self, exclusions=None, inclusions=None):
         if '*' in self.course_code:
             # If an abstract course
             for course in self.course_cache:
-                if is_same(self.course_code, course) and self.course_cache[course].passed:
+                passed = True
+                if exclusions is not None and course in exclusions:
+                    passed = False
+                if inclusions is not None and course not in inclusions:
+                    passed = False
+                if passed and is_same(self.course_code, course) and self.course_cache[course].passed:
                     return True
+
             return False
 
         elif self.course_code[:2] == 'BR':
             # If a certain breadth # is required is required
             total_breath = 0
             needed_breadth = int(self.course_code[3])
+
             for course in self.course_cache:
-                if self.course_cache[course].breadth == self.course_code[2]:
+                passed = True
+                if exclusions is not None and course in exclusions:
+                    passed = False
+                if inclusions is not None and course not in inclusions:
+                    passed = False
+                if passed and self.course_cache[course].breadth == self.course_code[2]:
                     total_breath += 1
                     if total_breath >= needed_breadth:
                         return True
             return False
 
         else:
-            return self.mark >= 50
+            passed = True
+            if exclusions is not None and self in exclusions:
+                passed = False
+            if inclusions is not None and self not in inclusions:
+                passed = False
 
-    passed = property(_passed)
+            return passed and self.mark >= 50
 
     def __repr__(self):
         return 'Course(' + self.course_code + ')'
