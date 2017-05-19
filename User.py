@@ -35,7 +35,7 @@ def get_user_lines():
 
 
 def initial_setup():
-    file = open('programs.txt').readlines()
+    file = open('data\programs.txt').readlines()
     for line in file:
         if line[0] == '@':
             pass
@@ -93,8 +93,8 @@ class User:
         for program in DEFAULT_PROGRAMS:
             temp = convert_to_requirement(deepcopy(DEFAULT_PROGRAMS[program]['requirements']), self._courses)
 
-            percentage = (temp.have[1] / temp.need) * 100
-            completed = temp.need - temp.have[1]
+            percentage = (temp.have / temp.need if temp.need != 0 else 1) * 100 # testing
+            completed = temp.need - temp.have
 
             values['percentage'].append([DEFAULT_PROGRAMS[program]['name'], percentage])
             values['completed'].append([DEFAULT_PROGRAMS[program]['name'], completed])
@@ -243,7 +243,7 @@ class User:
             self.add_program(program_code)
 
 
-def convert_to_requirement(requirements, courses, exclusions=None):
+def convert_to_requirement(requirements, courses, exclusions=None, treatall=False):
     """
     Converts each course code into a Course object then the entire requirement
     into a Requirement object while storing all the courses in course_cache
@@ -256,21 +256,33 @@ def convert_to_requirement(requirements, courses, exclusions=None):
 
     transformed_requirements = []
 
-    if isinstance(requirements[1], tuple):
-        start = 2
+    start = 1
+
+    if isinstance(requirements[start], tuple):
         if exclusions is None:
-            exclusions = requirements[1]
+            exclusions = requirements[start]
         else:
-            exclusions += requirements[1]
+            exclusions += requirements[start]
+        start += 1
     else:
-        start = 1
         exclusions = ()
 
-    for item in range(start, len(requirements[1:])):
+    if requirements[start] == 'TREATALL':
+        treatall = True
+        start += 1
+
+    if 'MIN' in requirements[0]:
+        end = len(requirements[:-2])
+    else:
+        end = len(requirements[:-1])
+
+    #print('1', requirements)
+    for item in range(start, end):
+        #print('2', requirements[item])
         # Loop through requirements[start:-1] starting at index 1, ending at -1
         if isinstance(requirements[item], list):
             # If a nested list
-            transformed_requirements.append(convert_to_requirement(requirements[item], courses, exclusions=exclusions))  # Give child the same exclusions
+            transformed_requirements.append(convert_to_requirement(requirements[item], courses, exclusions=exclusions, treatall=treatall))  # Give child the same exclusions
 
         elif requirements[item] in exclusions:
             pass
@@ -286,7 +298,8 @@ def convert_to_requirement(requirements, courses, exclusions=None):
             transformed_requirements.append(courses.course_cache[requirements[item]])
 
     # Turn into a Requirement object
-    return Requirement(requirements[0], float(requirements[-1]), transformed_requirements, exclusions=exclusions)
+    #print(requirements)
+    return Requirement(requirements[0], float(requirements[-2]) if 'MIN' in requirements[0] else None, float(requirements[-1]), transformed_requirements, exclusions=exclusions, treatall=treatall)
 
 
 if __name__ == '__main__':
@@ -295,12 +308,10 @@ if __name__ == '__main__':
         usr = User(input('Username: ').lower(), input('Password: '))
 
         if usr.logged_in():
+            print('Logged in')
             break
         else:
             del usr
 
-    usr.add_program('ASMAJ1689')
-    usr.add_course('CSC108H1')
-    print(usr.get_program_requirements('ASSPE1689'))
-    print(usr.get_program_requirements('ASMAJ1689'))
+    usr.add_program('ASSPE1478')
     print(usr.get_easiest())
