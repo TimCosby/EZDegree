@@ -1,113 +1,33 @@
-# NEED:
-# MAX FCE
-# MIN FCE
-# MAX CREDITS
-# MIN CREDITS
-# MAX PASSING
-# MIN PASSING
-# MIN MARK
-# EXCLUSIONS
-# ABSTRACTS
-
-# EXCLUSIONS -> ABSTRACTS -> MIN/MAX
-
-# [Modifier, [courses]]
-
-# Exclusions: in tuples
-
-# Abstracts: has *s in them
-
-# ['PASS', ('CSC4****'), blah, 2]
-
-# min will return the most possible
-# max will only return the set
+from Course import Course
 
 
 class Requirement:
     """
     Attributes:
     ==========
-        @param str modifier: The type of requirement for the group
-        @param float need: Amount of modifier needed
-        @param list of Course courses: Courses to be tested
+        @param str modifier: 
+                        The type of requirement for the group
+        @param float|None min: 
+                        Minimum amount of modifier needed (If none then don't care about minimum)
+        @param float max:
+                        Maximum amount of modifer needed
+        @param list of Course courses: 
+                        Courses required
+        @param bool treatall:
+                        Whether or not all courses need to be tested
     """
 
-    def __init__(self, modifier, need, courses, exclusions=None):
+    def __init__(self, modifier, min, max, courses, exclusions=None, treatall=False):
         self._modifier = modifier
         self._courses = courses
         self.exclusions = exclusions if exclusions is not None else ()
-        self._need = need
+        self._min = min
+        self._max = max
+        self._treatall = treatall
+        self._have = 0
 
-    def _get_have(self, list_=None):
-        """
-        Returns the amount of courses meeting the requirement of self
-
-        @param list of Course|Requirement list_:
-        @return: float
-        """
-        if list_ is None:
-            list_ = self._get_courses()
-
-        if self.modifier == 'MAXPASS' or self.modifier == 'MINPASS':
-            return self._courses_passed(list_)
-
-        elif self.modifier == 'MAXCREDITS' or self.modifier == 'MINCREDITS':
-            return self._credits_passed(list_)
-
-        elif self.modifier == 'MINMARK':
-            return self._above_mark(list_)
-
-    def _courses_passed(self, list_):
-        """
-        Return if the Courses in list_ meet self.need's requirements
-
-        @param list of Course|Requirement list_: 
-        @return: int
-        """
-
-        temp_passed = 0
-        temp_credits = 0.0
-
-        for item in list_:
-            if isinstance(item, Requirement):
-                temp = item.have
-
-                if item.modifier == 'MINMARK' and temp[0] != 0 or temp[0 if item.modifier[3:] == 'CREDITS' else 1] >= item.need:
-                    temp_passed += 1
-                    temp_credits += temp[0]
-
-            elif item.passed and item.course_code not in self.exclusions:
-                temp_passed += 1
-                temp_credits += item.weight
-
-        if self.modifier == 'MINPASS' or temp_passed <= self.need:
-            return temp_credits, temp_passed
-        else:
-            return temp_credits, self.need
-
-    def _credits_passed(self, list_):
-        temp_credits = 0.0
-
-        for item in list_:
-            if isinstance(item, Requirement):
-                temp = item.have
-
-                if temp[0] >= item.need:
-                    temp_credits += temp[0]
-
-            elif item.passed and item.course_code not in self.exclusions:
-                temp_credits += item.weight
-
-        if self.modifier == 'MINCREDITS' or temp_credits < self.need:
-            return temp_credits, None
-        else:
-            return self.need, None
-
-    def _above_mark(self, list_):
-        if list_[0].mark >= self.need:
-            return list_[0].weight, 1
-        else:
-            return 0.0, 0
+        self._used_courses = set([])
+        self._reqmet = False
 
     def _get_modifier(self):
         return self._modifier
@@ -115,25 +35,163 @@ class Requirement:
     def _get_courses(self):
         return self._courses
 
+    def _get_have(self):
+        if self._modifier[3:7] == 'PASS':
+            if self._modifier[-1] == 'X':
+                self._get_passed(1, self._treatall)
+            else:
+                self._get_passed(0, self._treatall)
+
+        elif 'CREDITS' in self.modifier:
+            if self._modifier[0] == 'X':
+                self._get_credits(2, self._treatall)
+
+            elif self.modifier[-1] == 'X':
+                self._get_credits(1, self._treatall)
+
+            else:
+                self._get_credits(0, self._treatall)
+
+        elif self._modifier == 'MARK':
+            self._get_mark()
+
+        elif self._modifier == 'ALLORNOT':
+            self._get_all_or_not()
+
+        else:
+            print(self.modifier)
+            raise Exception('Not possible modifier!')
+
+        return self._have
+
+    def _get_passed(self, special=0, treatall=False):
+        temp_used = set([])  # Which courses have been used (for special conditions)
+        passed = 0  # Passed courses counter
+
+        for course in self._courses:
+            if not treatall and passed >= self._max:
+                # If has passed the limit and is not checking all courses in the requirement
+                break
+
+            if isinstance(course, Requirement):
+                # If a nested requirement
+
+                course._used_courses = temp_used.copy()
+                course._get_have()
+                if course._reqmet:
+                    # If nested requirement passes
+                    passed += 1
+                    temp_used.update(course._used_courses)
+
+            elif special == 1:
+                # If a special requirement
+                if course.passed(exclusions=set(self.exclusions).copy().update(temp_used)):
+                    # If the course has not yet been use and is passed or is being taken
+                    passed += 1
+                    temp_used.add(course)
+
+            elif course.passed(exclusions=self.exclusions):
+                # If the course has been passed or is being taken
+                passed += 1
+                temp_used.add(course)
+
+        if (self._min is not None and passed >= self._min) or passed >= self._max:
+            # If courses meet the requirement
+            self._reqmet = True
+            self._have = passed
+            self._used_courses = temp_used
+
+        else:
+            # If courses don't meet the requirement
+            self._reqmet = False
+            self._used_courses = []
+
+    def _get_credits(self, special=0, treatall=False):
+        credits = 0.0
+        temp_used = set([])
+
+        for course in self._courses:
+            if not treatall and credits >= self._max:
+                # If has passed the limit and is not checking all courses in the requirement
+                break
+
+            elif isinstance(course, Requirement):
+                course._used_courses = temp_used.copy()
+                course._get_have()
+
+                if course._reqmet:
+                    sub_used = course._used_courses - temp_used
+                    for subcourse in sub_used:
+                        credits += subcourse.weight
+
+                    temp_used.update(sub_used)
+
+            elif special == 2 and course.passed(inclusions=temp_used, exclusions=self.exclusions):
+                temp_used.add(course)
+                credits += course.weight
+
+            elif special == 1 and course.passed(exclusions=set(self.exclusions).copy().update(temp_used)):
+                temp_used.add(course)
+                credits += course.weight
+
+            elif course.passed(exclusions=self.exclusions):
+                credits += course.weight
+
+        if (self._min is not None and credits >= self._min) or credits >= self._max:
+            # If courses meet the requirement
+            self._have = credits
+            self._reqmet = True
+            self._used_courses = temp_used
+
+        else:
+            # If courses don't meet the requirement
+            self._reqmet = False
+            self._used_courses = set([])
+
+    def _get_mark(self):
+        if self._courses[0].passed(exclusions=self.exclusions) and self._courses[0].mark >= self._max:
+            self._have = 1
+            self._used_courses.add(self._courses[0])
+            self._reqmet = True
+        else:
+            self._used_courses = set([])
+            self._reqmet = False
+
+    def _get_all_or_not(self):
+        temp_used = set([])
+
+        for course in self._used_courses:
+            if isinstance(course, Requirement):
+                course._used_courses = temp_used.copy()
+                course._get_have()
+
+                if not course._reqmet:
+                    self._reqmet = False
+                    self._used_courses = set([])
+                    return None
+                
+                else:
+                    temp_used.add(course._used_courses)
+
+            elif not course.passed(exclusions=self.exclusions):
+                self._reqmet = False
+                self._used_courses = set([])
+                return None
+
+        self._have = len(self.courses)
+        self._reqmet = True
+        self._used_courses = temp_used 
+
     def _get_need(self):
-        return self._need
-
-    def _get_passed(self):
-
-        if self.modifier == 'MAXPASS' or self.modifier == 'MINPASS':
-            return self._get_have(self._get_courses())[1] >= self._need
-
-        elif self.modifier == 'MAXCREDITS' or self.modifier == 'MINCREDITS':
-            return self._get_have(self._get_courses()) >= self._need
+        return self._min if self._min is not None else self._max
 
     modifier = property(_get_modifier)
     courses = property(_get_courses)
     have = property(_get_have)
     need = property(_get_need)
-    passed = property(_get_passed)
 
     def __repr__(self):
-        return 'Requirements(' + self.modifier + ' | N: ' + str(self.need) + ', H: ' + str(self.have) + ')'
+        return 'Requirements(' + self.modifier + ' | N: ' + str(self._max) + ', H: ' + str(self.have) + ')'
 
 
 
