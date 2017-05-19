@@ -1,6 +1,6 @@
 from openpyxl import load_workbook
 
-WORKBOOK = load_workbook('authentication.xlsx')
+WORKBOOK = load_workbook('data\\authentication.xlsx')
 WORKSHEET = WORKBOOK.active
 
 def authenticate(username, password, users, workbook, worksheet):
@@ -29,7 +29,7 @@ def authenticate(username, password, users, workbook, worksheet):
             worksheet.cell(column=1, row=row, value=username)
             worksheet.cell(column=2, row=row, value=str({}))
             worksheet.cell(column=3, row=row, value=str([]))
-            workbook.save('database.xlsx')
+            workbook.save('data\\database.xlsx')
 
             return True
         else:
