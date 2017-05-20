@@ -17,10 +17,10 @@ class Requirement:
                         Whether or not all courses need to be tested
     """
 
-    def __init__(self, modifier, min, max, courses, exclusions=None, treatall=False):
+    def __init__(self, modifier, min, max, courses, exclusions, treatall):
         self._modifier = modifier
         self._courses = courses
-        self.exclusions = exclusions if exclusions is not None else ()
+        self.exclusions = exclusions if exclusions is not None else set([])
         self._min = min
         self._max = max
         self._treatall = treatall
@@ -35,40 +35,177 @@ class Requirement:
     def _get_courses(self):
         return self._courses
 
-    def _get_have(self):
+    def _get_have(self, used=None):
+        used = set() if used is None else used
+
+        if self.modifier[3:7] == 'PASS':
+            if self.modifier[-1] == 'X':
+                special = 1
+            else:
+                special = 0
+
+            used = self._get_passed(special, used.copy())
+
+        elif 'CREDITS' in self.modifier:
+            if self.modifier[-1] == 'X':
+                special = 1
+            elif self.modifier[0] == 'X':
+                special = 2
+            else:
+                special = 0
+
+            used = self._get_credits(special, used.copy())
+
+        else:
+            raise Exception('Error in base operators', self.modifier)
+
+        self._used_courses = used
+
+        return self._have
+
+    def _get_passed(self, special, used):
+        temp_used = used
+        passed = 0
+
+        #print('\nV Special:', special)
+
+        for course in self._courses:
+            print('Used Courses:', temp_used)
+            if not self._treatall and self._max <= passed:
+                break
+
+            elif isinstance(course, Requirement):
+                if course.need <= course._get_have(temp_used):
+                    passed += 1
+                    temp_used.update(course._used_courses)
+
+            elif special == 1:
+                # If only checking courses that haven't been used
+                print('Course:', course)
+                trash = temp_used.copy()
+                trash.update(self.exclusions)
+                if course.passed(exclusions=trash):
+                    passed += 1
+                    temp_used.add(course)
+                    print('Passed!')
+                else:
+                    print('Did not pass!')
+
+            elif special == 0:
+                # If checking if the course has been passed
+                print('Course:', course)
+                if course.passed(exclusions=self.exclusions):
+                    passed += 1
+                    temp_used.add(course)
+                    print('Passed!')
+                else:
+                    print('Did not pass!')
+            else:
+                raise Exception('Special is at wrong number', special)
+
+        if self.need <= passed:
+            self._reqmet = True
+
+        else:
+            self._reqmet = False
+
+        self._have = passed
+        return temp_used
+
+    def _get_credits(self, special, used):
+        temp_used = used
+        credits = 0.0
+
+        for course in self._courses:
+            if not self._treatall and self._max <= self.have:
+                break
+
+            elif isinstance(course, Requirement):
+                if course._max <= course._get_have(temp_used):
+                    sub_used = course._used_courses - temp_used
+
+                    count = 0.0
+                    for item in sub_used:
+                        if count >= course._max:
+                            break
+                        else:
+                            count += item.weight
+                    credits += count
+
+                    temp_used.update(course._used_courses)
+
+            elif special == 2:
+                if course.passed(exclusions=self.exclusions, inclusions=temp_used):
+                    credits += course.weight
+                    temp_used.add(course)
+
+            elif special == 1:
+                trash = temp_used.copy().update(self.exclusions)
+                if course.passed(exclusions=trash):
+                    credits += course.weight
+                    temp_used.add(course)
+
+            elif special == 0:
+                if course.passed(exclusions=self.exclusions):
+                    credits += course.weight
+                    temp_used.add(course)
+
+            else:
+                raise Exception('Special is at wrong number', special)
+
+        if self.need <= credits:
+            self._reqmet = True
+
+        else:
+            self._reqmet = False
+
+        self._have = credits
+        return temp_used
+
+    '''
+    def _get_have(self, used=None):
+        #print('\n', self._modifier)
+        #print('courses:', self._courses)
+        used = set([]) if used is None else used
+
         if self._modifier[3:7] == 'PASS':
             if self._modifier[-1] == 'X':
-                self._get_passed(1, self._treatall)
+                self._get_passed(1, self._treatall, used)
             else:
-                self._get_passed(0, self._treatall)
+                self._get_passed(0, self._treatall, used)
 
         elif 'CREDITS' in self.modifier:
             if self._modifier[0] == 'X':
-                self._get_credits(2, self._treatall)
+                self._get_credits(2, self._treatall, used)
 
             elif self.modifier[-1] == 'X':
-                self._get_credits(1, self._treatall)
+                self._get_credits(1, self._treatall, used)
 
             else:
-                self._get_credits(0, self._treatall)
+                self._get_credits(0, self._treatall, used)
 
         elif self._modifier == 'MARK':
-            self._get_mark()
+            self._get_mark(used)
 
         elif self._modifier == 'ALLORNOT':
-            self._get_all_or_not()
+            self._get_all_or_not(used)
 
         else:
             print(self.modifier)
             raise Exception('Not possible modifier!')
 
+        #print('used', self._used_courses)
+        #print(self._reqmet)
+
         return self._have
 
-    def _get_passed(self, special=0, treatall=False):
-        temp_used = set([])  # Which courses have been used (for special conditions)
+    def _get_passed(self, special=0, treatall=False, used=None):
+        temp_used = used.copy()  # Which courses have been used (for special conditions)
         passed = 0  # Passed courses counter
 
         for course in self._courses:
+            print('course:', course)
+            print('used', temp_used, '\n')
             if not treatall and passed >= self._max:
                 # If has passed the limit and is not checking all courses in the requirement
                 break
@@ -76,8 +213,7 @@ class Requirement:
             if isinstance(course, Requirement):
                 # If a nested requirement
 
-                course._used_courses = temp_used.copy()
-                course._get_have()
+                course._get_have(temp_used.copy())
                 if course._reqmet:
                     # If nested requirement passes
                     passed += 1
@@ -106,9 +242,9 @@ class Requirement:
             self._reqmet = False
             self._used_courses = []
 
-    def _get_credits(self, special=0, treatall=False):
+    def _get_credits(self, special=0, treatall=False, used=None):
         credits = 0.0
-        temp_used = set([])
+        temp_used = used.copy()
 
         for course in self._courses:
             if not treatall and credits >= self._max:
@@ -116,8 +252,7 @@ class Requirement:
                 break
 
             elif isinstance(course, Requirement):
-                course._used_courses = temp_used.copy()
-                course._get_have()
+                course._get_have(temp_used.copy())
 
                 if course._reqmet:
                     sub_used = course._used_courses - temp_used
@@ -148,7 +283,7 @@ class Requirement:
             self._reqmet = False
             self._used_courses = set([])
 
-    def _get_mark(self):
+    def _get_mark(self, used=None):
         if self._courses[0].passed(exclusions=self.exclusions) and self._courses[0].mark >= self._max:
             self._have = 1
             self._used_courses.add(self._courses[0])
@@ -157,7 +292,7 @@ class Requirement:
             self._used_courses = set([])
             self._reqmet = False
 
-    def _get_all_or_not(self):
+    def _get_all_or_not(self, used=None):
         temp_used = set([])
 
         for course in self._used_courses:
@@ -181,9 +316,11 @@ class Requirement:
         self._have = len(self.courses)
         self._reqmet = True
         self._used_courses = temp_used 
+    '''
 
     def _get_need(self):
         return self._min if self._min is not None else self._max
+
 
     modifier = property(_get_modifier)
     courses = property(_get_courses)
