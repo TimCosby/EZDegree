@@ -243,8 +243,7 @@ class User:
         for program_code in literal_eval(WORKSHEET.cell(column=3, row=USERS[self.username]).value):
             self.add_program(program_code)
 
-
-    def convert_to_requirement(self, requirements, exclusions=None, treatall=False):
+    def convert_to_requirement(self, requirements, exclusions=None, treatall=False, only_used=False, only_unused=False):
         modifier = requirements[0]
         max = requirements[-1]
         min = None
@@ -252,6 +251,12 @@ class User:
         end_index = len(requirements) - 1
         transformed_requirements = []
         exclusions = set([]) if exclusions is None else exclusions
+
+        if modifier[0] == 'X':
+            only_used = True
+
+        elif modifier[-1] == 'X':
+            only_unused = True
 
         if isinstance(requirements[start_index], tuple):
             exclusions.update(set(requirements[start_index]))
@@ -261,14 +266,14 @@ class User:
             treatall = True
             start_index += 1
 
-        if isinstance(requirements[-2], int):
+        if isinstance(requirements[-2], int) or isinstance(requirements[-2], float):
             end_index -= 1
             min = requirements[-2]
 
         for index in range(start_index, end_index):
             if isinstance(requirements[index], list):
                 # If a nested requirement
-                transformed_requirements.append(self.convert_to_requirement(requirements[index], exclusions=exclusions, treatall=treatall))
+                transformed_requirements.append(self.convert_to_requirement(requirements[index], exclusions, treatall, only_used, only_unused))
 
             elif requirements[index] not in self._courses.course_cache:
                 # If a course
@@ -278,7 +283,7 @@ class User:
             else:
                 transformed_requirements.append(self._courses.course_cache[requirements[index]])
 
-        return Requirement(modifier, min, max, transformed_requirements, exclusions, treatall)
+        return Requirement(modifier, min, max, transformed_requirements, exclusions, treatall, only_used, only_unused)
 
 
 if __name__ == '__main__':
@@ -297,7 +302,8 @@ if __name__ == '__main__':
 
     a = usr.get_program_requirements('TEST')
     print(a)
-    #print(usr.get_easiest())
+    print(usr.get_easiest())
 
-    # Bug: X requirement not working
-    #      Should only show H: 1, but shows H: 2
+    # TO-DO:
+    # Make it do in convert to requirement that it will turn those damn special exceptions into the logic of the nested
+    # requirements so i dont have to deal with them
