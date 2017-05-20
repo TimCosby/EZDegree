@@ -15,6 +15,7 @@ TODO:
 '''
 
 DEFAULT_PROGRAMS = {}
+PROGRAM_FILE = 'data\\testprograms.txt' #'data\programs.txt'
 FILE_NAME = 'data\\database.xlsx'
 PAGE = 'https://cobalt.qas.im/api/1.0/courses/filter?q=code:%22'
 KEY = 'TVwEIjRZP80vhnY8HhM0OzZCMfydh4lA'
@@ -35,7 +36,7 @@ def get_user_lines():
 
 
 def initial_setup():
-    file = open('data\programs.txt').readlines()
+    file = open(PROGRAM_FILE).readlines()
     for line in file:
         if line[0] == '@':
             pass
@@ -43,7 +44,7 @@ def initial_setup():
             DEFAULT_PROGRAMS.update(literal_eval(line))
 
     for program in DEFAULT_PROGRAMS:
-        DEFAULT_PROGRAMS[program]['requirements'].append(len(DEFAULT_PROGRAMS[program]['requirements']) - 1)
+        DEFAULT_PROGRAMS[program]['requirements'].append(len(DEFAULT_PROGRAMS[program]['requirements']) - 2)
         #DEFAULT_PROGRAMS[program]['requirements'] = convert_to_obj(DEFAULT_PROGRAMS[program]['requirements'])
 
     get_user_lines()
@@ -91,9 +92,9 @@ class User:
     def get_easiest(self):
         values = {'percentage': [], 'completed': []}
         for program in DEFAULT_PROGRAMS:
-            temp = convert_to_requirement(deepcopy(DEFAULT_PROGRAMS[program]['requirements']), self._courses)
+            temp = self.convert_to_requirement(deepcopy(DEFAULT_PROGRAMS[program]['requirements']))
 
-            percentage = (temp.have / temp.need if temp.need != 0 else 1) * 100 # testing
+            percentage = (temp.have / temp.need if temp.need != 0 else 1) * 100  # testing
             completed = temp.need - temp.have
 
             values['percentage'].append([DEFAULT_PROGRAMS[program]['name'], percentage])
@@ -230,7 +231,7 @@ class User:
         WORKBOOK.save(FILE_NAME)
 
     def get_program_requirements(self, program_code):
-        return self._programs[program_code]['requirements']
+        return self.convert_to_requirement(deepcopy(DEFAULT_PROGRAMS[program_code]['requirements']))
 
     def initial_courses(self):
         for course_info in literal_eval(WORKSHEET.cell(column=2, row=USERS[self.username]).value):
@@ -243,63 +244,41 @@ class User:
             self.add_program(program_code)
 
 
-def convert_to_requirement(requirements, courses, exclusions=None, treatall=False):
-    """
-    Converts each course code into a Course object then the entire requirement
-    into a Requirement object while storing all the courses in course_cache
+    def convert_to_requirement(self, requirements, exclusions=None, treatall=False):
+        modifier = requirements[0]
+        max = requirements[-1]
+        min = None
+        start_index = 1
+        end_index = len(requirements) - 1
+        transformed_requirements = []
+        exclusions = set([]) if exclusions is None else exclusions
 
-    @param list of str|list requirements: 
-    @param Courses courses: Courses object
-    @param dict|None exclusions:
-    @return: Requirement
-    """
+        if isinstance(requirements[start_index], tuple):
+            exclusions.update(set(requirements[start_index]))
+            start_index += 1
 
-    transformed_requirements = []
+        if treatall is False and requirements[start_index] == 'TREATALL':
+            treatall = True
+            start_index += 1
 
-    start = 1
+        if isinstance(requirements[-2], int):
+            end_index -= 1
+            min = requirements[-2]
 
-    if isinstance(requirements[start], tuple):
-        if exclusions is None:
-            exclusions = requirements[start]
-        else:
-            exclusions += requirements[start]
-        start += 1
-    else:
-        exclusions = ()
+        for index in range(start_index, end_index):
+            if isinstance(requirements[index], list):
+                # If a nested requirement
+                transformed_requirements.append(self.convert_to_requirement(requirements[index], exclusions=exclusions, treatall=treatall))
 
-    if requirements[start] == 'TREATALL':
-        treatall = True
-        start += 1
+            elif requirements[index] not in self._courses.course_cache:
+                # If a course
+                self._courses.add_course(requirements[index])
+                transformed_requirements.append(self._courses.course_cache[requirements[index]])
 
-    if 'MIN' in requirements[0]:
-        end = len(requirements[:-2])
-    else:
-        end = len(requirements[:-1])
+            else:
+                transformed_requirements.append(self._courses.course_cache[requirements[index]])
 
-    #print('1', requirements)
-    for item in range(start, end):
-        #print('2', requirements[item])
-        # Loop through requirements[start:-1] starting at index 1, ending at -1
-        if isinstance(requirements[item], list):
-            # If a nested list
-            transformed_requirements.append(convert_to_requirement(requirements[item], courses, exclusions=exclusions, treatall=treatall))  # Give child the same exclusions
-
-        elif requirements[item] in exclusions:
-            pass
-
-        elif requirements[item] not in courses.course_cache:
-            # If a course code that has not yet been cached
-            courses.add_course(requirements[item], exclusions=exclusions)
-            courses.course_cache[requirements[item]] = courses.course_cache[requirements[item]]
-            transformed_requirements.append(courses.course_cache[requirements[item]])
-
-        else:
-            # If course is already cached
-            transformed_requirements.append(courses.course_cache[requirements[item]])
-
-    # Turn into a Requirement object
-    #print(requirements)
-    return Requirement(requirements[0], float(requirements[-2]) if 'MIN' in requirements[0] else None, float(requirements[-1]), transformed_requirements, exclusions=exclusions, treatall=treatall)
+        return Requirement(modifier, min, max, transformed_requirements, exclusions, treatall)
 
 
 if __name__ == '__main__':
@@ -313,5 +292,12 @@ if __name__ == '__main__':
         else:
             del usr
 
-    usr.add_program('ASSPE1478')
-    print(usr.get_easiest())
+    usr.add_course('CSC165H1')
+    usr.set_mark('CSC165H1', 100)
+
+    a = usr.get_program_requirements('TEST')
+    print(a)
+    #print(usr.get_easiest())
+
+    # Bug: X requirement not working
+    #      Should only show H: 1, but shows H: 2
