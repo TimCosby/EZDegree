@@ -67,9 +67,12 @@ class Course:
                 passed = True
                 if exclusions is not None and course in exclusions:
                     passed = False
+
                 if inclusions is not None and course not in inclusions:
                     passed = False
+
                 if passed and is_same(self.course_code, course) and self.course_cache[course].passed:
+                    self.weight = course.weight  # Since any course can potentially satisfy
                     return True
 
             return False
@@ -83,11 +86,15 @@ class Course:
                 passed = True
                 if exclusions is not None and course in exclusions:
                     passed = False
+
                 if inclusions is not None and course not in inclusions:
                     passed = False
+
                 if passed and self.course_cache[course].breadth == self.course_code[2]:
                     total_breath += 1
-                    if total_breath >= needed_breadth:
+
+                    self.weight = course.weight  # Since any course can potentially satisfy
+                    if total_breath == needed_breadth:
                         return True
             return False
 
@@ -95,6 +102,7 @@ class Course:
             passed = True
             if exclusions is not None and self in exclusions:
                 passed = False
+
             if inclusions is not None and self not in inclusions:
                 passed = False
 
