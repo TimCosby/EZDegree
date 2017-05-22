@@ -23,11 +23,13 @@ class Requirement:
         self.exclusions = exclusions if exclusions is not None else set([])
         self._min = min
         self._max = max
-        self._treatall = treatall
-        self._have = 0.0
+
+        self._credits_have = 0.0
+        self._courses_have = 0
 
         self.only_used = only_used
         self.only_unused = only_unused
+        self._treatall = treatall
 
         self._used_courses = set([])
         self._reqmet = False
@@ -42,114 +44,88 @@ class Requirement:
         used = set() if used is None else used
 
         if self.modifier[3:7] == 'PASS':
-            used = self._get_passed(used.copy())
+            temp = self._get_stuff(used.copy(), False)
+
+            if self._reqmet:
+                self._used_courses = temp
+
+            return self._courses_have
 
         elif 'CREDITS' in self.modifier:
-            used = self._get_credits(used.copy())
+            used = self._get_stuff(used.copy(), True)
+
+            self._used_courses = used
+
+            return self._credits_have
+
+        #elif 'MARK' == self.modifier:
+        #    used = self._get_min_mark(used.copy())
 
         else:
             raise Exception('Error in base operators', self.modifier)
 
-        self._used_courses = used
-
-        return self._have
-
-    def _get_passed(self, used):
-        temp_used = used
-        passed = 0
+    def _get_stuff(self, used, credits=False):
+        self._credits_have = 0.0
+        self._courses_have = 0
 
         for course in self._courses:
-            print('Used Courses:', temp_used)
-            if not self._treatall and self._max <= passed:
-                break
+            if not self._treatall:
+                # If not looking at every course possible
+                if credits and self._credits_have >= self._max:
+                    # If looking at credits count
+                    break
+                elif not credits and self._courses_have >= self._max:
+                    # If looking at passed courses count
+                    break
 
-            elif isinstance(course, Requirement):
-                trash_have = course.have
-                if trash_have >= course.need:
-                    passed += trash_have
-                    temp_used.update(course._used_courses)
-
-            elif self.only_unused:
-                # If only checking courses that haven't been used
-                print('Course:', course)
-                trash = temp_used.copy()
-                trash.update(self.exclusions)
-                if course.passed(exclusions=trash):
-                    passed += 1
-                    temp_used.add(course)
-                    print('Passed!')
-                else:
-                    print('Did not pass!')
-
-            else:
-                # If checking if the course has been passed
-                print('Course:', course)
-                if course.passed(exclusions=self.exclusions):
-                    passed += 1
-                    temp_used.add(course)
-                    print('Passed!')
-                else:
-                    print('Did not pass!')
-
-        if self.need <= passed:
-            self._reqmet = True
-
-        else:
-            self._reqmet = False
-
-        if passed > self._max:
-            self._have = self._max
-        else:
-            self._have = passed
-
-        return temp_used
-
-    def _get_credits(self, used):
-        temp_used = used
-        credits = 0.0
-
-        for course in self._courses:
-            if not self._treatall and self._max <= credits:
-                # If not looking at every course and surpassed the max needed amount of credits
-                break
-
-            elif isinstance(course, Requirement):
+            if isinstance(course, Requirement):
                 # If a nested requirement
-                trash_have = course.have
-                if trash_have >= course.need:
-                    # If requirement passed
-                    credits += trash_have  # Add credits from nested requirement
-                    temp_used.update(course._used_courses)  # Add the courses used in the nested requirement
+                trash = course.have  # Get the amount of the required satisfied
+                if trash >= course.need:  # If the amount satisfied is enough to satisfy
+                    self._credits_have += course._credits_have
+                    self._courses_have += course._courses_have
 
             elif self.only_used:
-                # If only looking into courses taken already
-                if course.passed(exclusions=self.exclusions, inclusions=temp_used):
-                    credits += course.weight
-                    temp_used.add(course)
+                # If looking at only courses that were previously used in requirements
+                if course.passed(exclusions=self.exclusions, inclusions=used):
+                    # If the course passed
+                    self._credits_have += course.weight
+                    self._courses_have += 1
 
             elif self.only_unused:
-                trash = temp_used.copy()
-                trash.update(self.exclusions)
+                # If looking at only courses that were previously unused in requirements
+                trash = used.update(self.exclusions)
                 if course.passed(exclusions=trash):
-                    credits += course.weight
-                    temp_used.add(course)
+                    # If the course passed
+                    used.add(course)
+                    self._credits_have += course.weight
+                    self._courses_have += 1
 
-            else:
-                if course.passed(exclusions=self.exclusions):
-                    credits += course.weight
-                    temp_used.add(course)
+            elif course.passed(exclusions=self.exclusions):
+                # If the course passed
+                used.add(course)
+                self._credits_have += course.weight
+                self._courses_have += 1
 
-        if self.need <= credits:
+        if credits and self.need <= self._credits_have:
+            # If satisfied the requirement
             self._reqmet = True
+
+            if self._credits_have > self._max:  # Makes it so cannot get the max of what we're looking for
+                self._credits_have = self._max
+
+        elif not credits and self.need <= self._courses_have:
+            # If satisfied the requirement
+            self._reqmet = True
+
+            if self._courses_have > self._max:  # Makes it so cannot get the max of what we're looking for
+                self._courses_have = self._max
+
         else:
+            # If did not satisfy the requirement
             self._reqmet = False
 
-        if credits > self._max:
-            self._have = self._max
-        else:
-            self._have = credits
-
-        return temp_used
+        return used
 
     def _get_need(self):
         return self._min if self._min is not None else self._max
@@ -165,6 +141,4 @@ class Requirement:
 
 
 
-
-#if __name__ == '__main__':
-    #usr = User()
+# NEED A PRETTY SOPHISTICATED SYSTEM WHERE IT FINDS A MIN AND MAX OF COURSES NEEDED TO BE TAKEN
