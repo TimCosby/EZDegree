@@ -54,12 +54,14 @@ class Requirement:
         elif 'CREDITS' in self.modifier:
             used = self._get_stuff(used.copy(), True)
 
-            self._used_courses = used
+            if self._reqmet:
+                self._used_courses = used
 
             return self._credits_have
 
-        #elif 'MARK' == self.modifier:
-        #    used = self._get_min_mark(used.copy())
+        elif 'MARK' == self.modifier:
+            used = self._get_min_mark(used.copy())
+
 
         else:
             raise Exception('Error in base operators', self.modifier)
@@ -67,6 +69,7 @@ class Requirement:
     def _get_stuff(self, used, credits=False):
         self._credits_have = 0.0
         self._courses_have = 0
+        any_false = False
 
         for course in self._courses:
             if not self._treatall:
@@ -80,10 +83,13 @@ class Requirement:
 
             if isinstance(course, Requirement):
                 # If a nested requirement
-                trash = course.have  # Get the amount of the required satisfied
+                trash = course._get_have(used)  # Get the amount of the required satisfied
                 if trash >= course.need:  # If the amount satisfied is enough to satisfy
                     self._credits_have += course._credits_have
                     self._courses_have += course._courses_have
+                    used.update(course._used_courses)
+                else:
+                    any_false = True
 
             elif self.only_used:
                 # If looking at only courses that were previously used in requirements
@@ -91,32 +97,39 @@ class Requirement:
                     # If the course passed
                     self._credits_have += course.weight
                     self._courses_have += 1
+                else:
+                    any_false = True
 
             elif self.only_unused:
                 # If looking at only courses that were previously unused in requirements
-                trash = used.update(self.exclusions)
+                trash = used.copy()
+                trash.update(self.exclusions)
                 if course.passed(exclusions=trash):
                     # If the course passed
                     used.add(course)
                     self._credits_have += course.weight
                     self._courses_have += 1
+                else:
+                    any_false = True
 
             elif course.passed(exclusions=self.exclusions):
                 # If the course passed
                 used.add(course)
                 self._credits_have += course.weight
                 self._courses_have += 1
+            else:
+                any_false = True
 
         if credits and self.need <= self._credits_have:
             # If satisfied the requirement
-            self._reqmet = True
+            self._reqmet = not any_false
 
             if self._credits_have > self._max:  # Makes it so cannot get the max of what we're looking for
                 self._credits_have = self._max
 
         elif not credits and self.need <= self._courses_have:
             # If satisfied the requirement
-            self._reqmet = True
+            self._reqmet = not any_false
 
             if self._courses_have > self._max:  # Makes it so cannot get the max of what we're looking for
                 self._courses_have = self._max
@@ -127,8 +140,18 @@ class Requirement:
 
         return used
 
+    def _get_min_mark(self, used):
+        if self._courses.mark >= self.need:
+            self._reqmet = True
+            used.add(self._courses)
+
+        else:
+            self._reqmet = False
+
+        return used
+
     def _get_need(self):
-        return self._min if self._min is not None else self._max
+        return self._min if self._min is not None else self._max  # Get the min if it exist
 
     modifier = property(_get_modifier)
     courses = property(_get_courses)
@@ -136,7 +159,7 @@ class Requirement:
     need = property(_get_need)
 
     def __repr__(self):
-        return 'Requirements(' + self.modifier + ' | N: ' + str(self._max) + ', H: ' + str(self.have) + ')'
+        return 'Requirements(' + self.modifier + ' | N: ' + str(self.need) + ', H: ' + str(self.have) + ')'
 
 
 

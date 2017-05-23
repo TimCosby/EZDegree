@@ -43,8 +43,8 @@ def initial_setup():
         else:
             DEFAULT_PROGRAMS.update(literal_eval(line))
 
-    for program in DEFAULT_PROGRAMS:
-        DEFAULT_PROGRAMS[program]['requirements'].append(len(DEFAULT_PROGRAMS[program]['requirements']) - 2)
+    #for program in DEFAULT_PROGRAMS:
+        #DEFAULT_PROGRAMS[program]['requirements'].append(len(DEFAULT_PROGRAMS[program]['requirements']) - 2)
         #DEFAULT_PROGRAMS[program]['requirements'] = convert_to_obj(DEFAULT_PROGRAMS[program]['requirements'])
 
     get_user_lines()
@@ -231,7 +231,9 @@ class User:
         WORKBOOK.save(FILE_NAME)
 
     def get_program_requirements(self, program_code):
-        return self.convert_to_requirement(deepcopy(DEFAULT_PROGRAMS[program_code]['requirements']))
+        temp =  self.convert_to_requirement(deepcopy(DEFAULT_PROGRAMS[program_code]['requirements']))
+        temp.have
+        return temp
 
     def initial_courses(self):
         for course_info in literal_eval(WORKSHEET.cell(column=2, row=USERS[self.username]).value):
@@ -249,39 +251,48 @@ class User:
         min = None
         start_index = 1
         end_index = len(requirements) - 1
-        transformed_requirements = []
         exclusions = set([]) if exclusions is None else exclusions
 
-        if modifier[0] == 'X':
-            only_used = True
+        if modifier != 'MARK':
+            transformed_requirements = []
 
-        elif modifier[-1] == 'X':
-            only_unused = True
+            if isinstance(requirements[-2], int) or isinstance(requirements[-2], float):
+                end_index -= 1
+                min = requirements[-2]
 
-        if isinstance(requirements[start_index], tuple):
-            exclusions.update(set(requirements[start_index]))
-            start_index += 1
+            if modifier[0] == 'X':
+                only_used = True
 
-        if treatall is False and requirements[start_index] == 'TREATALL':
-            treatall = True
-            start_index += 1
+            elif modifier[-1] == 'X':
+                only_unused = True
 
-        if isinstance(requirements[-2], int) or isinstance(requirements[-2], float):
-            end_index -= 1
-            min = requirements[-2]
+            if isinstance(requirements[start_index], tuple):
+                for item in requirements[start_index]:
+                    if item not in self._courses.course_cache:
+                        self._courses.add_course(item)
+                    exclusions.add(self._courses.course_cache[item])
+                start_index += 1
 
-        for index in range(start_index, end_index):
-            if isinstance(requirements[index], list):
-                # If a nested requirement
-                transformed_requirements.append(self.convert_to_requirement(requirements[index], exclusions, treatall, only_used, only_unused))
+            if treatall is False and requirements[start_index] == 'TREATALL':
+                treatall = True
+                start_index += 1
 
-            elif requirements[index] not in self._courses.course_cache:
-                # If a course
-                self._courses.add_course(requirements[index])
-                transformed_requirements.append(self._courses.course_cache[requirements[index]])
+            for index in range(start_index, end_index):
+                if isinstance(requirements[index], list):
+                    # If a nested requirement
+                    transformed_requirements.append(self.convert_to_requirement(requirements[index], exclusions, treatall, only_used, only_unused))
 
-            else:
-                transformed_requirements.append(self._courses.course_cache[requirements[index]])
+                elif requirements[index] not in self._courses.course_cache:
+                    # If a course
+                    self._courses.add_course(requirements[index])
+                    transformed_requirements.append(self._courses.course_cache[requirements[index]])
+
+                else:
+                    transformed_requirements.append(self._courses.course_cache[requirements[index]])
+
+        else:
+            self._courses.add_course(requirements[1])
+            transformed_requirements = self._courses.course_cache[requirements[1]]
 
         return Requirement(modifier, min, max, transformed_requirements, exclusions, treatall, only_used, only_unused)
 
@@ -298,11 +309,10 @@ if __name__ == '__main__':
             del usr
 
     usr.add_course('CSC165H1')
-    usr.set_mark('CSC165H1', 100)
+    usr.set_mark('CSC108H1', 60)
 
-    a = usr.get_program_requirements('TEST')
+    a = usr.get_program_requirements('CREDITSMAX')
     print(a)
-    print(usr.get_easiest())
 
     # TO-DO:
     # Make it do in convert to requirement that it will turn those damn special exceptions into the logic of the nested

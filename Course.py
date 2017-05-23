@@ -62,6 +62,7 @@ class Course:
 
     def passed(self, exclusions=None, inclusions=None):
         if '*' in self.course_code:
+            self.weight = 0.0
             # If an abstract course
             for course in self.course_cache:
                 passed = True
@@ -72,15 +73,17 @@ class Course:
                     passed = False
 
                 if passed and is_same(self.course_code, course) and self.course_cache[course].passed:
-                    self.weight = course.weight  # Since any course can potentially satisfy
-                    return True
+                    self.weight += course.weight  # Since any course can potentially satisfy
 
-            return False
+                    if self.course_code[-1] != 'X':
+                        break
+
+            return self.weight != 0.0
 
         elif self.course_code[:2] == 'BR':
             # If a certain breadth # is required is required
             total_breath = 0
-            needed_breadth = int(self.course_code[3])
+            self.weight = 0.0
 
             for course in self.course_cache:
                 passed = True
@@ -90,13 +93,14 @@ class Course:
                 if inclusions is not None and course not in inclusions:
                     passed = False
 
-                if passed and self.course_cache[course].breadth == self.course_code[2]:
+                if passed and self.course_cache[course].breadth == self.course_code[-1]:
                     total_breath += 1
+                    self.weight += course.weight
 
-                    self.weight = course.weight  # Since any course can potentially satisfy
-                    if total_breath == needed_breadth:
-                        return True
-            return False
+                    if self.course_code[-1] != 'X':
+                        break
+
+            return self.weight != 0.0
 
         else:
             passed = True
