@@ -24,7 +24,7 @@ def authenticate(username, password, users, workbook, worksheet):
 
             WORKSHEET.cell(column=1, row=row, value=str(username))
             WORKSHEET.cell(column=2, row=row, value=str(password))
-            WORKBOOK.save('authentication.xlsx')
+            WORKBOOK.save('data\\authentication.xlsx')
 
             worksheet.cell(column=1, row=row, value=username)
             worksheet.cell(column=2, row=row, value=str({}))
