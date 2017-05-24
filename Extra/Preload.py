@@ -29,18 +29,19 @@ def recur(requirements, special, destroy=None):
 
 lines = open('programs.txt').readlines()
 
-special = literal_eval(lines[1])
+#special = literal_eval(lines[1])
 
 final = {}
 
 for line in lines[2:]:
-    if '@' not in line:
+    if line != '' and '@' not in line:
+        print(line)
         final.update(literal_eval(line))
 
 for program in final:
-    recur(final[program]['requirements'], special)
+    #recur(final[program]['requirements'], special)
     final[program]['requirements'].append(len(final[program]['requirements']) - 1)
 
 from os.path import join
 from os import pardir
-open(join(pardir, 'data\\data.dat'), 'w').write(str(final).replace(' ', ''))
+open(join(pardir, 'data\\data.dat'), 'w').write(str(final))
