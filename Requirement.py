@@ -62,6 +62,10 @@ class Requirement:
         elif 'MARK' == self.modifier:
             used = self._get_min_mark(used.copy())
 
+            if self._reqmet:
+                self._used_courses = used
+
+            return self._courses_have
 
         else:
             raise Exception('Error in base operators', self.modifier)
@@ -82,41 +86,46 @@ class Requirement:
                     break
 
             if isinstance(course, Requirement):
+                #print('nested')
                 # If a nested requirement
                 trash = course._get_have(used)  # Get the amount of the required satisfied
+
                 if trash >= course.need:  # If the amount satisfied is enough to satisfy
                     self._credits_have += course._credits_have
-                    self._courses_have += course._courses_have
+                    self._courses_have += 1
                     used.update(course._used_courses)
                 else:
                     any_false = True
 
             elif self.only_used:
+                #print(course)
                 # If looking at only courses that were previously used in requirements
-                if course.passed(exclusions=self.exclusions, inclusions=used):
+                if course.passed(exclusions=self.exclusions, inclusions=used, limit=self._max - self._credits_have if credits else self._max - self._courses_have, credits=credits):
                     # If the course passed
                     self._credits_have += course.weight
-                    self._courses_have += 1
+                    self._courses_have += course.course_count
                 else:
                     any_false = True
 
             elif self.only_unused:
+                #print(course)
                 # If looking at only courses that were previously unused in requirements
                 trash = used.copy()
                 trash.update(self.exclusions)
-                if course.passed(exclusions=trash):
+                if course.passed(exclusions=trash, limit=self._max - self._credits_have if credits else self._max - self._courses_have, used=used, credits=credits):
                     # If the course passed
-                    used.add(course)
                     self._credits_have += course.weight
-                    self._courses_have += 1
+                    self._courses_have += course.course_count
+
                 else:
                     any_false = True
 
-            elif course.passed(exclusions=self.exclusions):
+            elif course.passed(exclusions=self.exclusions, limit=self._max - self._credits_have if credits else self._max - self._courses_have, used=used, credits=credits):
+                #print(course)
                 # If the course passed
-                used.add(course)
                 self._credits_have += course.weight
-                self._courses_have += 1
+                self._courses_have += course.course_count
+
             else:
                 any_false = True
 
@@ -143,6 +152,8 @@ class Requirement:
     def _get_min_mark(self, used):
         if self._courses.mark >= self.need:
             self._reqmet = True
+            self._courses_have += 1
+            self._credits_have += self._courses.weight
             used.add(self._courses)
 
         else:
