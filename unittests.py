@@ -9,6 +9,7 @@ USR.set_mark('CSC148H1', 80)
 USR.add_course('CSC165H1')
 USR.set_mark('CSC165H1', 80)
 
+
 class TestStringMethods(unittest.TestCase):
 
     def test_credits_max(self):
@@ -49,8 +50,11 @@ class TestStringMethods(unittest.TestCase):
         results = USR.get_program_requirements('CREDITS_ABSTRACT_TRUE')
         self.assertTrue(results._reqmet)
 
-        results = USR.get_program_requirements('CREDITS_ABSTRACT_FALSE')
+        results = USR.get_program_requirements('CREDITS_ABSTRACT_TEXTRA')
         self.assertTrue(results._reqmet)
+
+        results = USR.get_program_requirements('CREDITS_ABSTRACT_FALSE')
+        self.assertFalse(results._reqmet)
 
     def test_courses_max(self):
         pass

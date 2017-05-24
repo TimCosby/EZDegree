@@ -12,5 +12,6 @@
 {'CREDITS_EXCLUSIONS_FALSE': {'name': 'CREDITS_EXCLUSIONS_FALSE', 'id': 'CREDITS_EXCLUSIONS_FALSE', 'type': 'TEST', 'description': "TEST PROGRAM", 'requirements': ['MAXCREDITS', ('CSC148H1', 'CSC148H1'), 'CSC108H1', 'CSC148H1', 'CSC165H1', 1.5]}}
 @
 {'CREDITS_ABSTRACT_TRUE': {'name': 'CREDITS_ABSTRACT_TRUE', 'id': 'CREDITS_ABSTRACT_TRUE', 'type': 'TEST', 'description': "TEST PROGRAM", 'requirements': ['MAXCREDITS', 'CSC1****', ['MAXCREDITS', 'CSC1****X', 0.5], 2.0]}}
-{'CREDITS_ABSTRACT_FALSE': {'name': 'CREDITS_ABSTRACT_FALSE', 'id': 'CREDITS_ABSTRACT_FALSE', 'type': 'TEST', 'description': "TEST PROGRAM", 'requirements': ['MAXCREDITS', ('CSC165H1', 'CSC165H1'), 'CSC1****X', ['MAXCREDITSX', 'CSC1****X', 0.5], ['XCREDITS', 'CSC1****X', 0.5], 1.5]}}
+{'CREDITS_ABSTRACT_TEXTRA': {'name': 'CREDITS_ABSTRACT_TEXTRA', 'id': 'CREDITS_ABSTRACT_TEXTRA', 'type': 'TEST', 'description': "TEST PROGRAM", 'requirements': ['MAXCREDITS', ('CSC165H1', 'CSC165H1'), 'CSC1****X', ['MAXCREDITSX', 'CSC1****X', 0.5], ['XCREDITS', 'CSC1****X', 0.5], 1.5]}}
+{'CREDITS_ABSTRACT_FALSE': {'name': 'CREDITS_ABSTRACT_FALSE', 'id': 'CREDITS_ABSTRACT_FALSE', 'type': 'TEST', 'description': "TEST PROGRAM", 'requirements': ['MAXCREDITS', 'CSC1****', ['MAXCREDITSX', 'CSC1****X', 0.5], 2.0]}}
 @{'': {'name': '', 'id': '', 'type': 'TEST', 'description': "TEST PROGRAM", 'requirements': []}}
