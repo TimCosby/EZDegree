@@ -10,7 +10,7 @@ class Courses:
         self.course_cache = {}
 
     def add_course(self, course_code, exclusions=None):
-        if '*' not in course_code:
+        if '*' not in course_code and 'BR' != course_code[:2]:
             page = PAGE + course_code + "%22"
             pr = Request(page)
             pr.add_header('Authorization', KEY)
@@ -64,10 +64,14 @@ class Course:
         self.mark = 0
         self.type = 'Planned'
 
-        if code[6] == 'Y':
-            self.weight = 1
-        else:
-            self.weight = 0.5
+        try:
+            if code[6] == 'Y':
+                self.weight = 1
+            else:
+                self.weight = 0.5
+        except IndexError:
+            self.weight = 0.0
+
         self.course_count = 1  # Used for abstract courses
 
         self.exclusions = exclusions
@@ -112,7 +116,6 @@ class Course:
             total_breadth = 0
 
             for course in self.course_cache:
-
                 if 'BR' not in course:
                     passed = True
                     if exclusions is not None and self.course_cache[course] in exclusions:
@@ -127,7 +130,7 @@ class Course:
                         if self.course_code[-1] == 'X':
                             break
 
-            return self.weight != 0.0
+            return total_breadth != 0
 
         else:
             passed = True
