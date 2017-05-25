@@ -21,7 +21,7 @@ class TestStringMethods(unittest.TestCase):
         self.assertTrue(results._reqmet)
 
     def test_credits_treatall(self):
-        results = USR.get_program_requirements('TREATALL')
+        results = USR.get_program_requirements('CRTREATALL')
         self.assertTrue(results._reqmet)
         self.assertTrue(len(results._used_courses) == 3)
 
@@ -57,28 +57,58 @@ class TestStringMethods(unittest.TestCase):
         self.assertFalse(results._reqmet)
 
     def test_courses_max(self):
-        pass
+        results = USR.get_program_requirements('COURSESMAX_TRUE')
+        self.assertTrue(results._reqmet)
+
+        results = USR.get_program_requirements('COURSESMAX_FALSE')
+        self.assertFalse(results._reqmet)
 
     def test_courses_min(self):
-        pass
+        results = USR.get_program_requirements('COURSESMIN_TRUE')
+        self.assertTrue(results._reqmet)
+
+        results = USR.get_program_requirements('COURSESMIN_FALSE')
+        self.assertFalse(results._reqmet)
 
     def test_courses_treatall(self):
-        pass
+        results = USR.get_program_requirements('COTREATALL')
+        self.assertTrue(results._reqmet)
+        self.assertTrue(len(results._used_courses) == 3)
 
     def test_courses_only_used(self):
-        pass
+        results = USR.get_program_requirements('COURSES_ONLYUSED_TRUE')
+        self.assertTrue(results._reqmet)
+
+        results = USR.get_program_requirements('COURSES_ONLYUSED_FALSE')
+        self.assertFalse(results._reqmet)
 
     def test_courses_only_unused(self):
-        pass
+        results = USR.get_program_requirements('COURSES_ONLYUNUSED_TRUE')
+        self.assertTrue(results._reqmet)
+
+        results = USR.get_program_requirements('COURSES_ONLYUNUSED_FALSE')
+        self.assertFalse(results._reqmet)
 
     def test_courses_exclusions(self):
-        pass
+        results = USR.get_program_requirements('COURSES_EXCLUSIONS_TRUE')
+        self.assertTrue(results._reqmet)
+
+        results = USR.get_program_requirements('COURSES_EXCLUSIONS_FALSE')
+        self.assertFalse(results._reqmet)
 
     def test_abstract_course(self):
-        pass
+        results = USR.get_program_requirements('COURSES_ABSTRACT_TRUE')
+        self.assertTrue(results._reqmet)
+
+        results = USR.get_program_requirements('COURSES_ABSTRACT_FALSE')
+        self.assertFalse(results._reqmet)
 
     def test_breadth(self):
-        pass
+        results = USR.get_program_requirements('BREADTH_TRUE')
+        self.assertTrue(results._reqmet)
+
+        results = USR.get_program_requirements('BREADTH_FALSE')
+        self.assertFalse(results._reqmet)
 
 
 if __name__ == '__main__':
