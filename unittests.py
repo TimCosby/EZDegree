@@ -1,7 +1,7 @@
 import unittest
 import User
 
-USR = User.User('tim', 'Cosby')
+USR = User.User('Test', 'Test')
 USR.add_course('CSC108H1')
 USR.set_mark('CSC108H1', 80)
 USR.add_course('CSC148H1')
@@ -108,6 +108,13 @@ class TestStringMethods(unittest.TestCase):
         self.assertTrue(results._reqmet)
 
         results = USR.get_program_requirements('BREADTH_FALSE')
+        self.assertFalse(results._reqmet)
+
+    def mark(self):
+        results = USR.get_program_requirements('MARK_TRUE')
+        self.assertTrue(results._reqmet)
+
+        results = USR.get_program_requirements('MARK_FALSE')
         self.assertFalse(results._reqmet)
 
 
