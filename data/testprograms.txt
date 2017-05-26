@@ -38,4 +38,7 @@
 @
 {'BREADTH_TRUE': {'name': 'BREADTH_TRUE', 'id': 'BREADTH_TRUE', 'type': 'TEST', 'description': "TEST PROGRAM", 'requirements': ['MAXPASS', 'BR5', 1]}}
 {'BREADTH_FALSE': {'name': 'BREADTH_FALSE', 'id': 'BREADTH_FALSE', 'type': 'TEST', 'description': "TEST PROGRAM", 'requirements': ['MAXPASS', 'BR1', 1]}}
+@
+{'MARK_TRUE': {'name': 'MARK_TRUE', 'id': 'MARK_TRUE', 'type': 'TEST', 'description': "TEST PROGRAM", 'requirements': ['MAXPASS', ['MARK', 'CSC108H1' , 80], 1]}}
+{'MARK_FALSE': {'name': 'MARK_FALSE', 'id': 'MARK_FALSE', 'type': 'TEST', 'description': "TEST PROGRAM", 'requirements': ['MAXPASS', ['MARK', 'CSC108H1' , 81], 1]}}
 @{'': {'name': '', 'id': '', 'type': 'TEST', 'description': "TEST PROGRAM", 'requirements': []}}
