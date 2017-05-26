@@ -94,12 +94,20 @@ else:
 
 dict_ = {}
 
+temp = ''
+
 for line in file:
     if line[0] == '@':  # If a comment
         pass
 
+    elif line[0] != '{':
+        temp += line.replace('\n', '').replace('		', '')
+
     else:  # If not a comment, add to the dictionary
-        dict_.update(literal_eval(line))
+        if temp != '':
+            dict_.update(literal_eval(temp))
+
+        temp = line.replace('\n', '')
 
 for program in dict_:
     if program != 'ELG':  # If not a group
