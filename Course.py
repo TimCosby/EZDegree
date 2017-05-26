@@ -10,16 +10,20 @@ class Courses:
         self.course_cache = {}
 
     def add_course(self, course_code, exclusions=None):
-        if '*' not in course_code and 'BR' != course_code[:2]:
-            page = PAGE + course_code + "%22"
-            pr = Request(page)
-            pr.add_header('Authorization', KEY)
-            raw = urlopen(pr)
-            info = literal_eval(raw.read().decode('utf-8'))[0]
-        else:
-            info = None
+        if course_code not in self.course_cache:
+            if '*' not in course_code and 'BR' != course_code[:2]:
+                page = PAGE + course_code + "%22"
+                pr = Request(page)
+                pr.add_header('Authorization', KEY)
+                raw = urlopen(pr)
+                info = literal_eval(raw.read().decode('utf-8'))[0]
+            else:
+                info = None
 
-        self.course_cache[course_code] = Course(course_code, self.course_cache, exclusions, breadth=info['breadths'] if info is not None else info, times=info['meeting_sections'] if info is not None else info)
+            self.course_cache[course_code] = Course(course_code, self.course_cache, exclusions, breadth=info['breadths'] if info is not None else info, times=info['meeting_sections'] if info is not None else info)
+
+        else:
+            print('Course is already added!')
 
     def remove_course(self, course_code):
         try:
@@ -45,11 +49,18 @@ def is_same(string, other):
     @param str other: Another Course code
     @return: bool
     """
+
+    # If the two strings are the same length
     if len(string) - 1 if string[-1] == 'X' else len(string) == len(other):
+
+        # If both courses aren't abstract
         if '*' not in other:
             same = True
+            # For every index in the course code
             for index in range(len(string) - 1 if string[-1] == 'X' else len(string)):
+                # If the index is not an abstract
                 if string[index] != '*':
+                    # If the indexes do not match
                     if string[index] != other[index]:
                         same = False
                         break

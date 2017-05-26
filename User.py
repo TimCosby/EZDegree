@@ -14,8 +14,8 @@ TODO:
 3. Load in all the programs
 '''
 
-DEFAULT_PROGRAMS = {}
-PROGRAM_FILE = 'data\\testprograms.txt' #'data\programs.txt'
+PROGRAM_FILE = 'data\data.dat'  #'data\\testprograms.txt'
+DEFAULT_PROGRAMS = literal_eval(open(PROGRAM_FILE).readline())
 FILE_NAME = 'data\\database.xlsx'
 PAGE = 'https://cobalt.qas.im/api/1.0/courses/filter?q=code:%22'
 KEY = 'TVwEIjRZP80vhnY8HhM0OzZCMfydh4lA'
@@ -34,22 +34,7 @@ def get_user_lines():
         USERS[cell] = row
         row += 1
 
-
-def initial_setup():
-    file = open(PROGRAM_FILE).readlines()
-    for line in file:
-        if line[0] == '@':
-            pass
-        else:
-            DEFAULT_PROGRAMS.update(literal_eval(line))
-
-    #for program in DEFAULT_PROGRAMS:
-        #DEFAULT_PROGRAMS[program]['requirements'].append(len(DEFAULT_PROGRAMS[program]['requirements']) - 2)
-        #DEFAULT_PROGRAMS[program]['requirements'] = convert_to_obj(DEFAULT_PROGRAMS[program]['requirements'])
-
-    get_user_lines()
-
-initial_setup()
+get_user_lines()
 
 
 class User:
@@ -73,11 +58,11 @@ class User:
             A dictionary of program codes that the user has added
     """
     def __init__(self, username, password):
-        if not authenticate(username, password, USERS, WORKBOOK, WORKSHEET):
+        if not authenticate(username.lower(), password, USERS, WORKBOOK, WORKSHEET):
             self._logged_in = False
         else:
             self._logged_in = True
-            self.username = username
+            self.username = username.lower()
 
             self._courses = Courses()
             self._taken_courses = {}
@@ -231,7 +216,7 @@ class User:
         WORKBOOK.save(FILE_NAME)
 
     def get_program_requirements(self, program_code):
-        temp =  self.convert_to_requirement(deepcopy(DEFAULT_PROGRAMS[program_code]['requirements']))
+        temp = self.convert_to_requirement(deepcopy(DEFAULT_PROGRAMS[program_code]['requirements']))
         temp.have
         return temp
 
@@ -308,12 +293,4 @@ if __name__ == '__main__':
         else:
             del usr
 
-    usr.add_course('CSC165H1')
-    usr.set_mark('CSC108H1', 60)
-
-    a = usr.get_program_requirements('CREDITSMAX')
-    print(a)
-
-    # TO-DO:
-    # Make it do in convert to requirement that it will turn those damn special exceptions into the logic of the nested
-    # requirements so i dont have to deal with them
+    print(usr.get_program_requirements('ASSPE1478'))

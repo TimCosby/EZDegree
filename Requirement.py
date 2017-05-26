@@ -65,7 +65,7 @@ class Requirement:
             if self._reqmet:
                 self._used_courses = used
 
-            return self._courses_have
+            return self._courses.mark
 
         else:
             raise Exception('Error in base operators', self.modifier)
@@ -152,12 +152,14 @@ class Requirement:
     def _get_min_mark(self, used):
         if self._courses.mark >= self.need:
             self._reqmet = True
-            self._courses_have += 1
-            self._credits_have += self._courses.weight
             used.add(self._courses)
+            self._courses_have = 1
+            self._credits_have = self._courses.weight
 
         else:
             self._reqmet = False
+            self._courses_have = 0
+            self._credits_have = 0.0
 
         return used
 
