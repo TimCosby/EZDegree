@@ -150,11 +150,12 @@ class User:
 
         try:
             self._taken_programs.remove(program_code)
+
+            WORKSHEET.cell(column=3, row=USERS[self.username], value=str(self._taken_programs))
+            WORKBOOK.save(FILE_NAME)
+
         except KeyError:
             print('Program does not exist!')
-
-        WORKSHEET.cell(column=3, row=USERS[self.username], value=str(self._taken_programs))
-        WORKBOOK.save(FILE_NAME)
 
     def remove_course(self, course_code):
         """
@@ -164,16 +165,20 @@ class User:
         :return: None
         """
 
-        # Collective courses
-        self._courses.remove_course(course_code)
+        try:
+            # Collective courses
+            self._courses.remove_course(course_code)
 
-        # Local courses
-        self._taken_courses.remove(course_code)
+            # Local courses
+            self._taken_courses.remove(course_code)
 
-        # Database courses
-        WORKSHEET.cell(column=2, row=USERS[self.username], value=str([[course_code, self._courses.get_type(course_code), self._courses.get_mark(course_code)] for course_code in self._taken_courses]))
-        WORKBOOK.save(FILE_NAME)
-        self._update_requirements()
+            # Database courses
+            WORKSHEET.cell(column=2, row=USERS[self.username], value=str([[course_code, self._courses.get_type(course_code), self._courses.get_mark(course_code)] for course_code in self._taken_courses]))
+            WORKBOOK.save(FILE_NAME)
+            self._update_requirements()
+
+        except Exception:
+            pass
 
     # ============= GET METHODS ================== #
 
@@ -253,7 +258,7 @@ class User:
         :return: dict of list
         """
 
-        values = {'percentage': [], 'completed': []}
+        values = {'percentage': [], 'to_finish': []}
 
         for program in self._program_requirement_cache:  # For every program
             shortened = self._program_requirement_cache[program]
