@@ -7,10 +7,25 @@ KEY = 'TVwEIjRZP80vhnY8HhM0OzZCMfydh4lA'
 
 
 class Courses:
+    """
+    Course handler
+
+    Public Attributes:
+    ==================
+        @param dict course_cache:
+            Dictionary of course objects made
+    """
     def __init__(self):
         self.course_cache = {}
 
-    def add_course(self, course_code, exclusions=None):
+    def add_course(self, course_code):
+        """
+        Make <course_code> into a Course object
+
+        :param str course_code: Course to add
+        :return: None
+        """
+
         if course_code not in self.course_cache:
             if '*' not in course_code and 'BR' != course_code[:2]:
                 try:
@@ -25,28 +40,65 @@ class Courses:
             else:
                 info = None
 
-            self.course_cache[course_code] = Course(course_code, self.course_cache, exclusions, breadth=info['breadths'] if info is not None else info, times=info['meeting_sections'] if info is not None else info)
+            self.course_cache[course_code] = Course(course_code, self.course_cache, breadth=info['breadths'] if info is not None else info, times=info['meeting_sections'] if info is not None else info)
 
         else:
             print('not', course_code)
             print('Course is already added!')
 
     def remove_course(self, course_code):
+        """
+        Remove the <course_code> object
+
+        :param str course_code: Course to remove
+        :return: None
+        """
+
         try:
             self.course_cache.pop(course_code)
         except KeyError:
             print('Course doesn\'t exist!')
 
     def change_mark(self, course_code, mark):
+        """
+        Modify <course_code>'s Course object to <mark>
+
+        :param str course_code: Course to modify
+        :param float mark: Mark to change to
+        :return: None
+        """
+
         self.course_cache[course_code].mark = mark
 
     def get_mark(self, course_code):
+        """
+        Return the mark of <course_code>'s Course object
+
+        :param str course_code:
+        :return: float
+        """
+
         return self.course_cache[course_code].mark
 
     def change_type(self, course_code, type):
+        """
+        Modify <course_code>'s Course object to <type>
+
+        :param str course_code: Course to modify
+        :param str type: Type to change to
+        :return: None
+        """
+
         self.course_cache[course_code].type = type
 
     def get_type(self, course_code):
+        """
+        Return the type of <course_code>'s Course object
+
+        :param str course_code:
+        :return: str
+        """
+
         return self.course_cache[course_code].type
 
     def __repr__(self):
@@ -82,14 +134,32 @@ def is_same(string, other):
 
 
 class Course:
-    def __init__(self, code, course_cache, exclusions, breadth=None, times=None):
+    """
+    Private Attributes:
+    ==================
+        @param str course_code:
+            Code for the course
+        @param float mark:
+            Mark for the course
+        @param str type:
+            Type of the course
+        @param float weight:
+            GPA weight of the course
+        @param dict course_cache:
+            Copy of course_cache
+        @param list of int breadth:
+            List of breadth count for course
+        @param dict times:
+            Dictionary of times the course takes place
+    """
+    def __init__(self, code, course_cache, breadth=None, times=None):
         self.course_code = code
-        self.mark = 0
+        self.mark = 0.0
         self.type = 'Planned'
 
         try:
             if code[6] == 'Y':
-                self.weight = 1
+                self.weight = 1.0
             else:
                 self.weight = 0.5
         except IndexError:
@@ -97,13 +167,22 @@ class Course:
 
         self.course_count = 1  # Used for abstract courses
 
-        self.exclusions = exclusions
         self.course_cache = course_cache
 
         self.breadth = breadth  # Not yet implemented
         self.times = times  # Not yet implemented
 
-    def passed(self, exclusions=None, inclusions=None, limit=None, used=None, credits=None):
+    def passed(self, exclusions=None, inclusions=None, limit=None, used=None, credits=False):
+        """
+        Return if the the course passes or not
+
+        :param set exclusions: Courses that are not valid to pass
+        :param set inclusions: Courses that are the only ones which are valid to pass
+        :param float limit: Limit of how much should be checked (for abstract courses)
+        :param set used: Set of courses used in previous requirements
+        :param bool credits: If looking for course count or amount of credits
+        :return: bool
+        """
         if '*' in self.course_code:
             self.weight = 0.0
             self.course_count = 0
