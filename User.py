@@ -72,9 +72,9 @@ class User:
             self._logged_in = True
             self.username = username.lower()
 
-            self._courses = Courses()
             self._taken_courses = []
             self._taken_programs = []
+            self._courses = Courses(self._taken_courses)
             self._program_requirement_cache = {}
 
             self.initial_courses()

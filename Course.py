@@ -15,8 +15,9 @@ class Courses:
         @param dict course_cache:
             Dictionary of course objects made
     """
-    def __init__(self):
+    def __init__(self, taken_courses):
         self.course_cache = {}
+        self.taken_courses = taken_courses
 
     def add_course(self, course_code):
         """
@@ -40,7 +41,7 @@ class Courses:
             else:
                 info = None
 
-            self.course_cache[course_code] = Course(course_code, self.course_cache, breadth=info['breadths'] if info is not None else info, times=info['meeting_sections'] if info is not None else info)
+            self.course_cache[course_code] = Course(course_code, self.course_cache, self.taken_courses, breadth=info['breadths'] if info is not None else info, times=info['meeting_sections'] if info is not None else info)
 
         else:
             print('not', course_code)
@@ -147,12 +148,14 @@ class Course:
             GPA weight of the course
         @param dict course_cache:
             Copy of course_cache
+        @param list of str taken_courses:
+            List of courses the user has taken
         @param list of int breadth:
             List of breadth count for course
         @param dict times:
             Dictionary of times the course takes place
     """
-    def __init__(self, code, course_cache, breadth=None, times=None):
+    def __init__(self, code, course_cache, taken_courses, breadth=None, times=None):
         self.course_code = code
         self.mark = 0.0
         self.type = 'Planned'
@@ -167,6 +170,7 @@ class Course:
 
         self.course_count = 1  # Used for abstract courses
 
+        self.taken_courses = taken_courses
         self.course_cache = course_cache
 
         self.breadth = breadth  # Not yet implemented
@@ -187,29 +191,27 @@ class Course:
             self.weight = 0.0
             self.course_count = 0
             # If an abstract course
-            for course in self.course_cache:
+            for course in self.taken_courses:
 
-                if '*' not in course:
+                passed = True
+                if exclusions is not None and self.course_cache[course] in exclusions:
+                    passed = False
 
-                    passed = True
-                    if exclusions is not None and self.course_cache[course] in exclusions:
-                        passed = False
+                if inclusions is not None and self.course_cache[course] not in inclusions:
+                    passed = False
 
-                    if inclusions is not None and self.course_cache[course] not in inclusions:
-                        passed = False
+                #print(course, exclusions)
 
-                    #print(course, exclusions)
+                if passed and self.course_cache[course].passed and is_same(self.course_code, course):
+                    #print('made it')
+                    self.weight += self.course_cache[course].weight  # Since any course can potentially satisfy
+                    self.course_count += 1
 
-                    if passed and self.course_cache[course].passed and is_same(self.course_code, course):
-                        #print('made it')
-                        self.weight += self.course_cache[course].weight  # Since any course can potentially satisfy
-                        self.course_count += 1
+                    if used is not None:
+                        used.add(self.course_cache[course])
 
-                        if used is not None:
-                            used.add(self.course_cache[course])
-
-                        if self.course_code[-1] == 'X' or (credits and self.weight >= limit) or (not credits and self.course_count >= limit):
-                            break
+                    if self.course_code[-1] == 'X' or (credits and self.weight >= limit) or (not credits and self.course_count >= limit):
+                        break
 
             return self.weight != 0.0
 
@@ -217,20 +219,19 @@ class Course:
             # If a certain breadth # is required is required
             total_breadth = 0
 
-            for course in self.course_cache:
-                if 'BR' not in course:
-                    passed = True
-                    if exclusions is not None and self.course_cache[course] in exclusions:
-                        passed = False
+            for course in self.taken_courses:
+                passed = True
+                if exclusions is not None and self.course_cache[course] in exclusions:
+                    passed = False
 
-                    if inclusions is not None and self.course_cache[course] not in inclusions:
-                        passed = False
+                if inclusions is not None and self.course_cache[course] not in inclusions:
+                    passed = False
 
-                    if passed and self.course_cache[course].breadth is not None and int(self.course_code[-1]) in self.course_cache[course].breadth:
-                        total_breadth += 1
+                if passed and self.course_cache[course].breadth is not None and int(self.course_code[-1]) in self.course_cache[course].breadth:
+                    total_breadth += 1
 
-                        if self.course_code[-1] == 'X':
-                            break
+                    if self.course_code[-1] == 'X':
+                        break
 
             return total_breadth != 0
 
