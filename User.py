@@ -166,9 +166,6 @@ class User:
         """
 
         try:
-            # Collective courses
-            self._courses.remove_course(course_code)
-
             # Local courses
             self._taken_courses.remove(course_code)
 
