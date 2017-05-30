@@ -13,25 +13,26 @@ def is_same(string, other):
     @param str other: Another Course code
     @return: bool
     """
+    try:
+        # If the two strings are the same length
+        if len(string) - 1 == len(other) if string[-1] == 'X' else len(string) == len(other):
 
-    # If the two strings are the same length
-    if len(string) - 1 == len(other) if string[-1] == 'X' else len(string) == len(other):
-
-        # If both courses aren't abstract
-        if '*' not in other:
-            same = True
-            # For every index in the course code
-            for index in range(len(string) - 1 if string[-1] == 'X' else len(string)):
-                # If the index is not an abstract
-                if string[index] != '*':
-                    # If the indexes do not match
-                    if string[index] != other[index]:
-                        same = False
-                        break
-            if same:
-                return True
-    return False
-
+            # If both courses aren't abstract
+            if '*' not in other:
+                same = True
+                # For every index in the course code
+                for index in range(len(string) - 1 if string[-1] == 'X' else len(string)):
+                    # If the index is not an abstract
+                    if string[index] != '*':
+                        # If the indexes do not match
+                        if string[index] != other[index]:
+                            same = False
+                            break
+                if same:
+                    return True
+        return False
+    except IndexError:
+        print('error:', string, other)
 
 def recur(list_, match=None):
     count = 1  # Skip the modifier
