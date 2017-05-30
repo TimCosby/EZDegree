@@ -40,7 +40,7 @@ class Requirement:
     def _get_courses(self):
         return self._courses
 
-    def _get_have(self, used=None):
+    def _update(self, used=None):
         used = set() if used is None else used
 
         if self.modifier[3:7] == 'PASS':
@@ -49,23 +49,17 @@ class Requirement:
             if self._reqmet:
                 self._used_courses = temp
 
-            return self._courses_have
-
         elif 'CREDITS' in self.modifier:
             used = self._get_stuff(used.copy(), True)
 
             if self._reqmet:
                 self._used_courses = used
 
-            return self._credits_have
-
         elif 'MARK' == self.modifier:
             used = self._get_min_mark(used.copy())
 
             if self._reqmet:
                 self._used_courses = used
-
-            return self._courses.mark
 
         else:
             raise Exception('Error in base operators', self.modifier)
@@ -88,9 +82,9 @@ class Requirement:
             if isinstance(course, Requirement):
                 #print('nested')
                 # If a nested requirement
-                trash = course._get_have(used)  # Get the amount of the required satisfied
+                course._update(used)  # Get the amount of the required satisfied
 
-                if trash >= course.need:  # If the amount satisfied is enough to satisfy
+                if course._reqmet:  # If the amount satisfied is enough to satisfy
                     self._credits_have += course._credits_have
                     self._courses_have += 1
                     used.update(course._used_courses)
@@ -166,10 +160,14 @@ class Requirement:
     def _get_need(self):
         return self._min if self._min is not None else self._max  # Get the min if it exist
 
+    def _get_have(self):
+        return self._credits_have if 'CREDITS' in self.modifier else self._courses.mark if self.modifier == 'MARK' else self._courses_have
+
     modifier = property(_get_modifier)
     courses = property(_get_courses)
-    have = property(_get_have)
+    update = property(_update)
     need = property(_get_need)
+    have = property(_get_have)
 
     def __repr__(self):
         return 'Requirements(' + self.modifier + ' | N: ' + str(self.need) + ', H: ' + str(self.have) + ')'
