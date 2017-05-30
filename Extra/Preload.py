@@ -55,10 +55,11 @@ def recur(list_, match=None):
 
         elif 'ELG' in list_[count]:
             # If a group
+            # Get the group code
+            tempest = list_[count]
+            temp = dict_['ELG'][tempest[tempest.find('[') + 1:tempest.find(']')]]
 
-            temp = dict_['ELG'][list_[count][4:7]]  # Get the group code
-
-            temper = recur(temp, match=list_[count][8:])  # Go through the group, only pulling out whatever matches
+            temper = recur(temp, match=list_[count][tempest.find(']') + 1:])  # Go through the group, only pulling out whatever matches
 
             list_.pop(count)  # Get rid of the original value
 
@@ -101,7 +102,7 @@ for line in file:
         pass
 
     elif line[0] != '{':
-        temp += line.replace('\n', '').replace('		', '')
+        temp += line.replace('\n', '').replace('	', '')
 
     else:  # If not a comment, add to the dictionary
         if temp != '':
