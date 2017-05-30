@@ -5,42 +5,57 @@ class Requirement:
     """
     Attributes:
     ==========
-        @param str modifier: 
+        @param str _modifier:
                         The type of requirement for the group
+        @param Courses _courses:
+                        A copy of the course_cache
+        @param list of Course _exclusions:
+                        A list of courses the requirement isn't valid for
         @param float|None min: 
                         Minimum amount of modifier needed (If none then don't care about minimum)
         @param float max:
-                        Maximum amount of modifer needed
-        @param list of Course courses: 
-                        Courses required
-        @param bool treatall:
+                        Maximum amount of modifier needed
+        @param float _credits_have:
+                        Credit count for the requirement
+        @param int _courses_have:
+                        Course count for the requirement
+        @param bool _only_used:
+                        If requirements are only checking courses that have been used in previous requirements
+        @param bool _only_unused:
+                        If requirements are only checking courses that have not been used in previous requirements
+        @param bool _treatall:
                         Whether or not all courses need to be tested
+        @param set _used_courses:
+                        A set of all courses that have been used in the requirement
+        @param bool _reqmet:
+                        Whether or not the requirement conditions have been met
     """
 
     def __init__(self, modifier, min, max, courses, exclusions, treatall, only_used, only_unused):
         self._modifier = modifier
         self._courses = courses
-        self.exclusions = exclusions if exclusions is not None else set([])
+        self._exclusions = exclusions if exclusions is not None else set([])
         self._min = min
         self._max = max
 
         self._credits_have = 0.0
         self._courses_have = 0
 
-        self.only_used = only_used
-        self.only_unused = only_unused
+        self._only_used = only_used
+        self._only_unused = only_unused
         self._treatall = treatall
 
         self._used_courses = set([])
         self._reqmet = False
 
-    def _get_modifier(self):
-        return self._modifier
-
-    def _get_courses(self):
-        return self._courses
-
     def _update(self, used=None):
+        """
+        Update the requirements in the Requirement object
+
+        :param set of Course used: Courses previously used in other requirements
+        :return: None
+        """
+
         used = set() if used is None else used
 
         if self.modifier[3:7] == 'PASS':
@@ -64,7 +79,36 @@ class Requirement:
         else:
             raise Exception('Error in base operators', self.modifier)
 
+    def _get_modifier(self):
+        """
+        Return modifier
+
+        i.e. MAXPASS, MAXCREDITS, etc
+
+        :return: str
+        """
+
+        return self._modifier
+
+    def _get_courses(self):
+        """
+        Return list of courses|nested requirements needed for the requirement
+
+        :return: list of Course|Requirement
+        """
+
+        return self._courses
+
     def _get_stuff(self, used, credits=False):
+        """
+        Return list of courses used in the requirement
+        Used to update the requirements in credits/pass/etc.
+
+        :param set of Course used: Courses previously used in other requirements
+        :param bool credits: Whether or not searching for course count or amount of credits
+        :return: set of Course
+        """
+
         self._credits_have = 0.0
         self._courses_have = 0
         any_false = False
@@ -91,21 +135,21 @@ class Requirement:
                 else:
                     any_false = True
 
-            elif self.only_used:
+            elif self._only_used:
                 #print(course)
                 # If looking at only courses that were previously used in requirements
-                if course.passed(exclusions=self.exclusions, inclusions=used, limit=self._max - self._credits_have if credits else self._max - self._courses_have, credits=credits):
+                if course.passed(exclusions=self._exclusions, inclusions=used, limit=self._max - self._credits_have if credits else self._max - self._courses_have, credits=credits):
                     # If the course passed
                     self._credits_have += course.weight
                     self._courses_have += course.course_count
                 else:
                     any_false = True
 
-            elif self.only_unused:
+            elif self._only_unused:
                 #print(course)
                 # If looking at only courses that were previously unused in requirements
                 trash = used.copy()
-                trash.update(self.exclusions)
+                trash.update(self._exclusions)
                 if course.passed(exclusions=trash, limit=self._max - self._credits_have if credits else self._max - self._courses_have, used=used, credits=credits):
                     # If the course passed
                     self._credits_have += course.weight
@@ -114,7 +158,7 @@ class Requirement:
                 else:
                     any_false = True
 
-            elif course.passed(exclusions=self.exclusions, limit=self._max - self._credits_have if credits else self._max - self._courses_have, used=used, credits=credits):
+            elif course.passed(exclusions=self._exclusions, limit=self._max - self._credits_have if credits else self._max - self._courses_have, used=used, credits=credits):
                 #print(course)
                 # If the course passed
                 self._credits_have += course.weight
@@ -144,6 +188,14 @@ class Requirement:
         return used
 
     def _get_min_mark(self, used):
+        """
+        Return list of courses used in the requirement
+        Used to update the requirements of a min mark requirement
+
+        :param set of Course used: Courses previously used in other requirements
+        :return: set of Course
+        """
+
         if self._courses.mark >= self.need:
             self._reqmet = True
             used.add(self._courses)
@@ -158,9 +210,21 @@ class Requirement:
         return used
 
     def _get_need(self):
+        """
+        Return needed credits | count of courses to fulfill the requirement
+
+        :return: int | float
+        """
+
         return self._min if self._min is not None else self._max  # Get the min if it exist
 
     def _get_have(self):
+        """
+        Return credits | count of courses met so far in the requirement
+
+        :return: int | float
+        """
+
         return self._credits_have if 'CREDITS' in self.modifier else self._courses.mark if self.modifier == 'MARK' else self._courses_have
 
     modifier = property(_get_modifier)
