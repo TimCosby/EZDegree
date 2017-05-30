@@ -3,32 +3,32 @@ from Course import Course
 
 class Requirement:
     """
-    Attributes:
-    ==========
+    Private Attributes:
+    ==================
         @param str _modifier:
-                        The type of requirement for the group
+            The type of requirement for the group
         @param Courses _courses:
-                        A copy of the course_cache
+            A copy of the course_cache
         @param list of Course _exclusions:
-                        A list of courses the requirement isn't valid for
-        @param float|None min: 
-                        Minimum amount of modifier needed (If none then don't care about minimum)
-        @param float max:
-                        Maximum amount of modifier needed
+            A list of courses the requirement isn't valid for
+        @param float|None _min:
+            Minimum amount of modifier needed (If none then don't care about minimum)
+        @param float _max:
+            Maximum amount of modifier needed
         @param float _credits_have:
-                        Credit count for the requirement
+            Credit count for the requirement
         @param int _courses_have:
-                        Course count for the requirement
+            Course count for the requirement
         @param bool _only_used:
-                        If requirements are only checking courses that have been used in previous requirements
+            If requirements are only checking courses that have been used in previous requirements
         @param bool _only_unused:
-                        If requirements are only checking courses that have not been used in previous requirements
+            If requirements are only checking courses that have not been used in previous requirements
         @param bool _treatall:
-                        Whether or not all courses need to be tested
+            Whether or not all courses need to be tested
         @param set _used_courses:
-                        A set of all courses that have been used in the requirement
+            A set of all courses that have been used in the requirement
         @param bool _reqmet:
-                        Whether or not the requirement conditions have been met
+            Whether or not the requirement conditions have been met
     """
 
     def __init__(self, modifier, min, max, courses, exclusions, treatall, only_used, only_unused):
