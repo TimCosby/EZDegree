@@ -1,5 +1,4 @@
-from urllib.request import Request
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 from ast import literal_eval
 import ssl
 PAGE = 'https://cobalt.qas.im/api/1.0/courses/filter?q=code:%22'
@@ -43,9 +42,8 @@ class Courses:
 
             self.course_cache[course_code] = Course(course_code, self.course_cache, self.taken_courses, breadth=info['breadths'] if info is not None else info, times=info['meeting_sections'] if info is not None else info)
 
-        else:
-            print('not', course_code)
-            print('Course is already added!')
+        #else:
+            #print('Course is already added!')
 
     def remove_course(self, course_code):
         """

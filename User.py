@@ -3,8 +3,7 @@ from Course import Courses
 from ast import literal_eval
 from openpyxl import load_workbook
 from Authentication import authenticate
-from copy import deepcopy
-from copy import copy
+from copy import deepcopy, copy
 
 '''
 TODO:
@@ -395,8 +394,10 @@ class User:
 
         :return: None
         """
+
         for program in DEFAULT_PROGRAMS:
             self._program_requirement_cache[program] = self.convert_to_requirement(deepcopy(DEFAULT_PROGRAMS[program]['requirements']))
+
         self._update_requirements()
 
     def convert_to_requirement(self, requirements, exclusions=None, treatall=False, only_used=False, only_unused=False):
@@ -410,58 +411,57 @@ class User:
         :param bool only_unused: If only courses that have previously not been used are being used
         :return: Requirement
         """
+        start = time.time()
 
         modifier = requirements[0]
-        max = requirements[-1]
-        min = None
         start_index = 1
         end_index = len(requirements) - 1
         exclusions = set([]) if exclusions is None else exclusions
 
         if modifier != 'MARK':
-            transformed_requirements = []
-
-            if isinstance(requirements[-2], int) or isinstance(requirements[-2], float):
-                end_index -= 1
-                min = requirements[-2]
+            transformed_requirements = set([])
 
             if modifier[0] == 'X':
                 only_used = True
-
+                only_unused = False
             elif modifier[-1] == 'X':
+                only_used = False
                 only_unused = True
+
+            max = requirements[-1]
+            if isinstance(requirements[-2], int) or isinstance(requirements[-2], float):
+                min = requirements[-2]
+                end_index -= 1
+            else:
+                min = None
 
             if isinstance(requirements[start_index], tuple):
                 for item in requirements[start_index]:
-                    if item not in self._courses.course_cache:
-                        self._courses.add_course(item)
-                    exclusions.add(self._courses.course_cache[item])
+                    exclusions.add(item)
                 start_index += 1
 
-            if treatall is False and requirements[start_index] == 'TREATALL':
+            if requirements[start_index] == 'TREATALL':
+                start_index += 1
                 treatall = True
-                start_index += 1
+            else:
+                treatall = False
 
-            for index in range(start_index, end_index):
-                if isinstance(requirements[index], list):
-                    # If a nested requirement
-                    transformed_requirements.append(self.convert_to_requirement(requirements[index], exclusions, treatall, only_used, only_unused))
-
-                elif requirements[index] not in self._courses.course_cache:
-                    # If a course
-                    self._courses.add_course(requirements[index])
-                    transformed_requirements.append(self._courses.course_cache[requirements[index]])
+            for item in range(start_index, end_index):
+                item = requirements[item]
+                if isinstance(item, list):
+                    transformed_requirements.add(self.convert_to_requirement(item, exclusions=exclusions, treatall=treatall, only_used=only_used, only_unused=only_unused))
 
                 else:
-                    transformed_requirements.append(self._courses.course_cache[requirements[index]])
+                    self._courses.add_course(item)
+                    transformed_requirements.add(self._courses.course_cache[item])
+
+            print('Took', time.time()-start)
+            return Requirement(modifier, min, max, transformed_requirements, exclusions, treatall, only_used, only_unused)
 
         else:
-            if requirements[1] not in self._courses.course_cache:
-                self._courses.add_course(requirements[1])
-
-            transformed_requirements = self._courses.course_cache[requirements[1]]
-
-        return Requirement(modifier, min, max, transformed_requirements, exclusions, treatall, only_used, only_unused)
+            self._courses.add_course(requirements[1])
+            print('Took', time.time()-start)
+            return Requirement(modifier, None, requirements[-1], self._courses.course_cache[requirements[1]], exclusions, treatall, only_used, only_unused)
 
 
 if __name__ == '__main__':
