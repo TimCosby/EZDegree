@@ -66,6 +66,7 @@ def recur(list_, match=None):
             for i in range(len(temper)):
                 list_.insert(count, temper[i])  # Put in everything matching from the group in the requirement
                 count += 1
+            count -= 1
 
         elif match is not None:
             # If needs to look for specific codes
