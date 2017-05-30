@@ -1,8 +1,9 @@
-PAGE = 'https://cobalt.qas.im/api/1.0/courses/filter?q=code:%22'
-KEY = 'TVwEIjRZP80vhnY8HhM0OzZCMfydh4lA'
 from urllib.request import Request
 from urllib.request import urlopen
 from ast import literal_eval
+import ssl
+PAGE = 'https://cobalt.qas.im/api/1.0/courses/filter?q=code:%22'
+KEY = 'TVwEIjRZP80vhnY8HhM0OzZCMfydh4lA'
 
 
 class Courses:
@@ -12,17 +13,22 @@ class Courses:
     def add_course(self, course_code, exclusions=None):
         if course_code not in self.course_cache:
             if '*' not in course_code and 'BR' != course_code[:2]:
-                page = PAGE + course_code + "%22"
-                pr = Request(page)
-                pr.add_header('Authorization', KEY)
-                raw = urlopen(pr)
-                info = literal_eval(raw.read().decode('utf-8'))[0]
+                try:
+                    page = PAGE + course_code + "%22"
+                    pr = Request(page)
+                    pr.add_header('Authorization', KEY)
+                    context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+                    raw = urlopen(pr, context=context)
+                    info = literal_eval(raw.read().decode('utf-8'))[0]
+                except IndexError:
+                    info = None
             else:
                 info = None
 
             self.course_cache[course_code] = Course(course_code, self.course_cache, exclusions, breadth=info['breadths'] if info is not None else info, times=info['meeting_sections'] if info is not None else info)
 
         else:
+            print('not', course_code)
             print('Course is already added!')
 
     def remove_course(self, course_code):
@@ -34,8 +40,14 @@ class Courses:
     def change_mark(self, course_code, mark):
         self.course_cache[course_code].mark = mark
 
+    def get_mark(self, course_code):
+        return self.course_cache[course_code].mark
+
     def change_type(self, course_code, type):
         self.course_cache[course_code].type = type
+
+    def get_type(self, course_code):
+        return self.course_cache[course_code].type
 
     def __repr__(self):
         return str(self.course_cache)
