@@ -116,7 +116,7 @@ for program in dict_:
     if program != 'ELG':  # If not a group
         recur(dict_[program]['requirements'])
 
-        if not test:
+        if not test and not isinstance(dict_[program]['requirements'][-1], int) and not isinstance(dict_[program]['requirements'][-1], float):
             dict_[program]['requirements'].append(len(dict_[program]['requirements']) - 1)  # Add the needed amount to be passed
 
 try:
