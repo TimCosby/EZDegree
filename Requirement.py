@@ -111,7 +111,6 @@ class Requirement:
 
         self._credits_have = 0.0
         self._courses_have = 0
-        any_false = False
 
         for course in self._courses:
             if not self._treatall:
@@ -128,12 +127,11 @@ class Requirement:
                 # If a nested requirement
                 course._update(used)  # Get the amount of the required satisfied
 
+                print(course, course._reqmet)
                 if course._reqmet:  # If the amount satisfied is enough to satisfy
                     self._credits_have += course._credits_have
                     self._courses_have += 1
                     used.update(course._used_courses)
-                else:
-                    any_false = True
 
             elif self._only_used:
                 #print(course)
@@ -142,8 +140,6 @@ class Requirement:
                     # If the course passed
                     self._credits_have += course.weight
                     self._courses_have += course.course_count
-                else:
-                    any_false = True
 
             elif self._only_unused:
                 #print(course)
@@ -155,28 +151,22 @@ class Requirement:
                     self._credits_have += course.weight
                     self._courses_have += course.course_count
 
-                else:
-                    any_false = True
-
             elif course.passed(exclusions=self._exclusions, limit=self._max - self._credits_have if credits else self._max - self._courses_have, used=used, credits=credits):
                 #print(course)
                 # If the course passed
                 self._credits_have += course.weight
                 self._courses_have += course.course_count
 
-            else:
-                any_false = True
-
         if credits and self.need <= self._credits_have:
             # If satisfied the requirement
-            self._reqmet = not any_false
+            self._reqmet = True
 
             if self._credits_have > self._max:  # Makes it so cannot get the max of what we're looking for
                 self._credits_have = self._max
 
         elif not credits and self.need <= self._courses_have:
             # If satisfied the requirement
-            self._reqmet = not any_false
+            self._reqmet = True
 
             if self._courses_have > self._max:  # Makes it so cannot get the max of what we're looking for
                 self._courses_have = self._max
