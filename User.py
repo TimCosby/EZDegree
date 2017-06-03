@@ -265,8 +265,8 @@ class User:
             values['percentage'].append([DEFAULT_PROGRAMS[program]['name'], percentage])
             values['to_finish'].append([DEFAULT_PROGRAMS[program]['name'], to_finish])
 
-        values['percentage'].sort(key=lambda x: x[1])  # Sort from Highest -> Lowest
-        values['to_finish'] = sorted(values['to_finish'], reverse=False, key=lambda x: x[1])  # Sort from Least -> Most
+        values['percentage'].sort(reverse=True, key=lambda x: x[1])  # Sort from Highest -> Lowest
+        values['to_finish'].sort(key=lambda x: x[1])  # Sort from Least -> Most
 
         return values
 
@@ -480,16 +480,5 @@ if __name__ == '__main__':
             print('Incorrect login!\n')
             del usr
 
-    start = time.time()
-
-    print(usr.get_program_requirements('ASSPE0115'))
-
-    usr.remove_course('MAT223H1')
-
-    print('Update Time:', time.time() - start, 'seconds')
-
-    start = time.time()
-
+    print(usr.get_program_requirements('ASMIN1478'))
     print(usr.get_easiest())
-
-    print('Get easiest time:', time.time() - start, 'seconds')

@@ -35,7 +35,7 @@ class Courses:
                     context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
                     raw = urlopen(pr, context=context)
                     info = literal_eval(raw.read().decode('utf-8'))[0]
-                except IndexError:
+                except Exception:
                     info = None
             else:
                 info = None
