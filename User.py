@@ -4,6 +4,7 @@ from ast import literal_eval
 from openpyxl import load_workbook
 from Authentication import authenticate
 from copy import deepcopy, copy
+from urllib.request import urlopen
 
 '''
 TODO:
@@ -55,8 +56,6 @@ class User:
     ==================
         @param bool _logged_in: 
             Whether or not the user successfully logged in
-        @param Courses _courses:
-            A Courses object containing all functions towards courses
         @param list _taken_courses:
             A list of Course objects that the user has added
         @param list _taken_programs:
@@ -116,6 +115,24 @@ class User:
         else:
             print('Program already added!')
 
+    def _get_breadths(self, text):
+        """
+        Return list of int representing the breadths in text
+
+        :param str text: A line of results
+        :return: list of int
+        """
+
+        start = 0
+        breadths = []
+
+        while start != -1:
+            start = text.find('(', start + 1)
+            if start != -1:
+                breadths.append(int(text[start + 1]))
+
+        return breadths
+
     def add_course(self, course_code, initial=False):
         """
         Add <course_code> to the user's taken courses
@@ -125,14 +142,26 @@ class User:
         :return: None
         """
 
-        # Local courses
-        self._taken_courses[course_code] = Course(course_code)
+        if course_code not in self._taken_courses:
+            lines = urlopen("https://timetable.iit.artsci.utoronto.ca/api/20169/courses?code=" + course_code).readlines()  # Get course info
 
-        # Database courses
-        WORKSHEET.cell(column=2, row=USERS[self.username], value=str([[course_code, self._taken_courses[course_code].type, self._taken_courses[course_code].mark] for course_code in self._taken_courses]))
-        WORKBOOK.save(FILE_NAME)
-        if not initial:
-            self._update_requirements()
+            if len(lines) > 1:
+                breadths = self._get_breadths(lines[15].decode('utf-8'))
+
+                for breadth in breadths:
+                    self._breadths[breadth - 1] += 1
+
+                # Local courses
+                self._taken_courses[course_code] = Course(course_code, breadths=breadths)
+
+                # Database courses
+                WORKSHEET.cell(column=2, row=USERS[self.username], value=str([[course_code, self._taken_courses[course_code].type, self._taken_courses[course_code].mark] for course_code in self._taken_courses]))
+                WORKBOOK.save(FILE_NAME)
+                if not initial:
+                    self._update_requirements()
+
+            else:
+                print('Couldn\'t find course!')
 
     # ============= REMOVE METHODS ================== #
 
@@ -162,6 +191,9 @@ class User:
         """
 
         try:
+            for breadth in self._taken_courses[course_code].breadths:
+                self._breadths[breadth] -= 1
+
             # Local courses
             self._taken_courses.remove(course_code)
 
@@ -225,7 +257,7 @@ class User:
         :return: Course
         """
 
-        return self._courses.course_cache[course_code]
+        return self._taken_courses[course_code]
 
     def get_mark(self, course_code):
         """
@@ -281,7 +313,7 @@ class User:
         credits = 0
 
         for course in self._taken_courses:
-            course = self._courses.course_cache[course]
+            course = self._taken_courses[course]
             if course.type != 'Dropped':
                 # If the course wasn't dropped
 
@@ -457,8 +489,6 @@ class User:
                     transformed_requirements.append(self.convert_to_requirement(item, exclusions=exclusions, treatall=treatall, only_used=only_used, only_unused=only_unused))
 
                 else:
-                    #self._courses.add_course(item)
-                    #transformed_requirements.add(self._courses.course_cache[item])
                     transformed_requirements.append(item)
 
             return Requirement(modifier, min, max, transformed_requirements, exclusions, treatall, only_used, only_unused, self._taken_courses, self._breadths)
@@ -483,5 +513,12 @@ if __name__ == '__main__':
             print('Incorrect login!\n')
             del usr
 
-    print(usr.get_program_requirements('ASMIN1478'))
+    start = time.time()
+    usr.add_course('MAT224H1')
+    print('Course Add Time:', time.time() - start, 'seconds')
+    start = time.time()
+    usr.remove_course('MAT224H1')
+    print('Course Remove Time:', time.time() - start, 'seconds')
+    start = time.time()
     print(usr.get_easiest())
+    print('Easiest program Time:', time.time() - start, 'seconds')
