@@ -14,10 +14,6 @@ TODO:
 
 2. Load in all the programs
     a) Hell on earth
-    
-3. Make it so that when a new course is added all ABSTRACT courses are gone through and add it to their special list of some sort
-
-4. Make it so that there is a breadth counter
 '''
 
 PROGRAM_FILE = 'data\data.dat'  #'data\\testprograms.txt'
@@ -115,24 +111,6 @@ class User:
         else:
             print('Program already added!')
 
-    def _get_breadths(self, text):
-        """
-        Return list of int representing the breadths in text
-
-        :param str text: A line of results
-        :return: list of int
-        """
-
-        start = 0
-        breadths = []
-
-        while start != -1:
-            start = text.find('(', start + 1)
-            if start != -1:
-                breadths.append(int(text[start + 1]))
-
-        return breadths
-
     def add_course(self, course_code, initial=False):
         """
         Add <course_code> to the user's taken courses
@@ -143,7 +121,10 @@ class User:
         """
 
         if course_code not in self._taken_courses:
-            lines = urlopen("https://timetable.iit.artsci.utoronto.ca/api/20169/courses?code=" + course_code).readlines()  # Get course info
+            lines = urlopen("https://timetable.iit.artsci.utoronto.ca/api/20179/courses?code=" + course_code).readlines()  # Get course info
+
+            if len(lines) < 1:
+                lines = urlopen("https://timetable.iit.artsci.utoronto.ca/api/20169/courses?code=" + course_code).readlines()  # Get course info
 
             if len(lines) > 1:
                 breadths = self._get_breadths(lines[15].decode('utf-8'))
@@ -241,6 +222,24 @@ class User:
     def get_total_breadth(self):
         return self._breadths
 
+    def _get_breadths(self, text):
+        """
+        Return list of int representing the breadths in text
+
+        :param str text: A line of results
+        :return: list of int
+        """
+
+        start = 0
+        breadths = []
+
+        while start != -1:
+            start = text.find('(', start + 1)
+            if start != -1:
+                breadths.append(int(text[start + 1]))
+
+        return breadths
+
     def get_courses(self):
         """
         Return a list of all courses the user is taking
@@ -279,7 +278,7 @@ class User:
 
         return self._taken_courses[course_code].type
 
-    def get_easiest(self):
+    def get_easiest(self, limit=5):
         """
         Return a list of easiest to get programs by percentage and courses needed
 
@@ -299,6 +298,9 @@ class User:
 
         values['percentage'].sort(reverse=True, key=lambda x: x[1])  # Sort from Highest -> Lowest
         values['to_finish'].sort(key=lambda x: x[1])  # Sort from Least -> Most
+
+        values['percentage'] = values['percentage'][:limit]
+        values['to_finish'] = values['to_finish'][:limit]
 
         return values
 
@@ -512,6 +514,15 @@ if __name__ == '__main__':
         else:
             print('Incorrect login!\n')
             del usr
+
+    usr.set_mark('CSC108H1', 85)
+    usr.set_mark('CSC148H1', 94)
+    usr.set_mark('CSC165H1', 80)
+    usr.set_mark('MAT135H1', 68)
+    usr.set_mark('MAT136H1', 62)
+    usr.set_mark('MAT223H1', 57)
+    usr.set_mark('PHL101Y1', 70)
+    usr.set_mark('SII199Y1', 84)
 
     start = time.time()
     usr.add_course('MAT224H1')
