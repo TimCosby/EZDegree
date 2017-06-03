@@ -1,5 +1,5 @@
 from Requirement import Requirement
-from Course import Courses
+from Course import Course
 from ast import literal_eval
 from openpyxl import load_workbook
 from Authentication import authenticate
@@ -71,10 +71,10 @@ class User:
             self._logged_in = True
             self.username = username.lower()
 
-            self._taken_courses = []
+            self._taken_courses = {}
             self._taken_programs = []
-            self._courses = Courses(self._taken_courses)
             self._program_requirement_cache = {}
+            self._breadths = [0, 0, 0, 0, 0]
 
             self.initial_courses()
             self.initial_programs()
@@ -125,14 +125,11 @@ class User:
         :return: None
         """
 
-        # Collective courses
-        self._courses.add_course(course_code)
-
         # Local courses
-        self._taken_courses.append(course_code)
+        self._taken_courses[course_code] = Course(course_code)
 
         # Database courses
-        WORKSHEET.cell(column=2, row=USERS[self.username], value=str([[course_code, self._courses.get_type(course_code), self._courses.get_mark(course_code)] for course_code in self._taken_courses]))
+        WORKSHEET.cell(column=2, row=USERS[self.username], value=str([[course_code, self._taken_courses[course_code].type, self._taken_courses[course_code].mark] for course_code in self._taken_courses]))
         WORKBOOK.save(FILE_NAME)
         if not initial:
             self._update_requirements()
@@ -169,7 +166,7 @@ class User:
             self._taken_courses.remove(course_code)
 
             # Database courses
-            WORKSHEET.cell(column=2, row=USERS[self.username], value=str([[course_code, self._courses.get_type(course_code), self._courses.get_mark(course_code)] for course_code in self._taken_courses]))
+            WORKSHEET.cell(column=2, row=USERS[self.username], value=str([[course_code, self._taken_courses[course_code].type, self._taken_courses[course_code].mark] for course_code in self._taken_courses]))
             WORKBOOK.save(FILE_NAME)
             self._update_requirements()
 
@@ -208,6 +205,9 @@ class User:
         """
 
         return self._program_requirement_cache[program_code]
+
+    def get_total_breadth(self):
+        return self._breadths
 
     def get_courses(self):
         """
@@ -333,17 +333,20 @@ class User:
         :return: None
         """
 
-        try:
-            self._courses.change_mark(course_code, mark)
+        if len(course_code) == 8 and isinstance(course_code, str) and course_code in self._taken_courses:
 
-            WORKSHEET.cell(column=2, row=USERS[self.username], value=str([[course_code, self._courses.get_type(course_code), self._courses.get_mark(course_code)] for course_code in self._taken_courses]))
+            self._taken_courses[course_code].mark = mark
+
+            WORKSHEET.cell(column=2, row=USERS[self.username], value=str([[course_code, self._taken_courses[course_code].type, self._taken_courses[course_code].mark] for course_code in self._taken_courses]))
             WORKBOOK.save(FILE_NAME)
+
+            self._taken_courses[course_code]._update_passed()
             self._update_requirements()
 
-        except KeyError:
+        else:
             print('Course does not exist!')
 
-    def set_type(self, course_code, type):
+    def set_type(self, course_code, type_):
         """
         Set the type of <course_code> to <type>
 
@@ -352,17 +355,17 @@ class User:
         :return: None
         """
 
-        try:
-            if type == 'Completed' and self._taken_courses[course_code] < 50:
-                type = 'Failed'
+        if len(course_code) == 8 and isinstance(course_code, str) and course_code in self._taken_courses:
 
-            self._courses.change_type(course_code, type)
+            self._taken_courses[course_code].type = type_
 
-            WORKSHEET.cell(column=2, row=USERS[self.username], value=str([[course_code, self._courses.get_type(course_code), self._courses.get_mark(course_code)] for course_code in self._taken_courses]))
+            WORKSHEET.cell(column=2, row=USERS[self.username], value=str([[course_code, self._taken_courses[course_code].type, self._taken_courses[course_code].mark] for course_code in self._taken_courses]))
             WORKBOOK.save(FILE_NAME)
+
+            self._taken_courses[course_code]._update_passed()
             self._update_requirements()
 
-        except KeyError:
+        else:
             print('Course does not exist!')
 
     # ============= INITIAL OBJECT METHODS ================== #
@@ -452,16 +455,17 @@ class User:
                     transformed_requirements.add(self.convert_to_requirement(item, exclusions=exclusions, treatall=treatall, only_used=only_used, only_unused=only_unused))
 
                 else:
-                    self._courses.add_course(item)
-                    transformed_requirements.add(self._courses.course_cache[item])
+                    #self._courses.add_course(item)
+                    #transformed_requirements.add(self._courses.course_cache[item])
+                    transformed_requirements.add(item)
 
             print('Took', time.time()-start)
-            return Requirement(modifier, min, max, transformed_requirements, exclusions, treatall, only_used, only_unused)
+            return Requirement(modifier, min, max, transformed_requirements, exclusions, treatall, only_used, only_unused, self._taken_courses, self._breadths)
 
         else:
-            self._courses.add_course(requirements[1])
+            #self._courses.add_course(requirements[1])
             print('Took', time.time()-start)
-            return Requirement(modifier, None, requirements[-1], self._courses.course_cache[requirements[1]], exclusions, treatall, only_used, only_unused)
+            return Requirement(modifier, None, requirements[-1], requirements[1], exclusions, treatall, only_used, only_unused, self._taken_courses, self._breadths)
 
 
 if __name__ == '__main__':

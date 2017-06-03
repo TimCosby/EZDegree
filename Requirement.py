@@ -1,5 +1,31 @@
 from Course import Course
 
+def is_same(string, other):
+    """
+    For abstract courses (ie. 'CSC4****')
+
+    @param str string: Abstract Course code
+    @param str other: Another Course code
+    @return: bool
+    """
+
+    # If the two strings are the same length
+    if len(string) - 1 if string[-1] == 'X' else len(string) == len(other):
+
+        # If both courses aren't abstract
+        if '*' not in other:
+            same = True
+            # For every index in the course code
+            for index in range(len(string) - 1 if string[-1] == 'X' else len(string)):
+                # If the index is not an abstract
+                if string[index] != '*':
+                    # If the indexes do not match
+                    if string[index] != other[index]:
+                        same = False
+                        break
+            if same:
+                return True
+    return False
 
 class Requirement:
     """
@@ -31,7 +57,7 @@ class Requirement:
             Whether or not the requirement conditions have been met
     """
 
-    def __init__(self, modifier, min, max, courses, exclusions, treatall, only_used, only_unused):
+    def __init__(self, modifier, min, max, courses, exclusions, treatall, only_used, only_unused, taken_courses, breadth):
         self._modifier = modifier
         self._courses = courses
         self._exclusions = exclusions if exclusions is not None else set([])
@@ -47,6 +73,8 @@ class Requirement:
 
         self._used_courses = set([])
         self._reqmet = False
+        self._taken = taken_courses
+        self._breadth_count = breadth
 
     def _update(self, used=None):
         """
@@ -100,15 +128,6 @@ class Requirement:
         return self._courses
 
     def _get_stuff(self, used, credits=False):
-        """
-        Return list of courses used in the requirement
-        Used to update the requirements in credits/pass/etc.
-
-        :param set of Course used: Courses previously used in other requirements
-        :param bool credits: Whether or not searching for course count or amount of credits
-        :return: set of Course
-        """
-
         self._credits_have = 0.0
         self._courses_have = 0
 
@@ -122,40 +141,54 @@ class Requirement:
                     # If looking at passed courses count
                     break
 
+            print(course)
+
             if isinstance(course, Requirement):
                 #print('nested')
                 # If a nested requirement
                 course._update(used)  # Get the amount of the required satisfied
 
-                print(course, course._reqmet)
                 if course._reqmet:  # If the amount satisfied is enough to satisfy
                     self._credits_have += course._credits_have
                     self._courses_have += 1
                     used.update(course._used_courses)
 
-            elif self._only_used:
-                #print(course)
-                # If looking at only courses that were previously used in requirements
-                if course.passed(exclusions=self._exclusions, inclusions=used, limit=self._max - self._credits_have if credits else self._max - self._courses_have, credits=credits):
-                    # If the course passed
-                    self._credits_have += course.weight
-                    self._courses_have += course.course_count
+            elif course[:2] == 'BR':  # Breadth requirement
+                self._credits_have += self._breadth_count[int(course[2]) - 1]
 
-            elif self._only_unused:
-                #print(course)
-                # If looking at only courses that were previously unused in requirements
-                trash = used.copy()
-                trash.update(self._exclusions)
-                if course.passed(exclusions=trash, limit=self._max - self._credits_have if credits else self._max - self._courses_have, used=used, credits=credits):
-                    # If the course passed
-                    self._credits_have += course.weight
-                    self._courses_have += course.course_count
+            elif '*' in course:  # Abstract course
+                for courses in self._taken:
+                    if courses not in self._exclusions and self._taken[courses].is_passed() and is_same(course, courses):
+                        if self._only_used and courses not in used:
+                            self._credits_have += self._taken[courses].weight
+                            self._courses_have += 1
+                            break
 
-            elif course.passed(exclusions=self._exclusions, limit=self._max - self._credits_have if credits else self._max - self._courses_have, used=used, credits=credits):
-                #print(course)
-                # If the course passed
-                self._credits_have += course.weight
-                self._courses_have += course.course_count
+                        elif self._only_unused and courses not in used:
+                            self._credits_have += self._taken[courses].weight
+                            self._courses_have += 1
+                            break
+
+                        else:
+                            self._credits_have += self._taken[courses].weight
+                            self._courses_have += 1
+                            break
+
+            elif course in self._taken and course not in self._exclusions and self._taken[course].is_passed():  # Regular course
+                if self._only_used and course not in used:
+                    self._credits_have += self._taken[course].weight
+                    self._courses_have += 1
+                    break
+
+                elif self._only_unused and course not in used:
+                    self._credits_have += self._taken[course].weight
+                    self._courses_have += 1
+                    break
+
+                else:
+                    self._credits_have += self._taken[course].weight
+                    self._courses_have += 1
+                    break
 
         if credits and self.need <= self._credits_have:
             # If satisfied the requirement
@@ -186,11 +219,11 @@ class Requirement:
         :return: set of Course
         """
 
-        if self._courses.mark >= self.need:
+        if self._courses in self._taken and self._taken[self._courses].mark >= self.need:
             self._reqmet = True
             used.add(self._courses)
             self._courses_have = 1
-            self._credits_have = self._courses.weight
+            self._credits_have = self._taken[self._courses].weight
 
         else:
             self._reqmet = False
@@ -215,7 +248,17 @@ class Requirement:
         :return: int | float
         """
 
-        return self._credits_have if 'CREDITS' in self.modifier else self._courses.mark if self.modifier == 'MARK' else self._courses_have
+        if 'CREDITS' in self.modifier:
+            return self._credits_have
+
+        elif self.modifier == 'MARK':
+            if self._courses in self._taken:
+                return self._taken[self._courses]
+            else:
+                return 0
+
+        else:
+            return self._courses_have
 
     modifier = property(_get_modifier)
     courses = property(_get_courses)
