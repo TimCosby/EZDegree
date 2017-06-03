@@ -1,30 +1,29 @@
-PAGE = 'https://cobalt.qas.im/api/1.0/courses/filter?q=code:%22'
-KEY = 'TVwEIjRZP80vhnY8HhM0OzZCMfydh4lA'
-
-
 class Course:
     """
     Private Attributes:
     ==================
         @param str code:
             Code for the course
+        @param list of int breadths:
+            List of the course's breadths
     """
-    def __init__(self, code):
+    def __init__(self, code, breadths):
         self._course_code = code
         self._mark = 0.0
         self._type = 'Planned'
 
-        try:
-            if code[6] == 'Y':
-                self.weight = 1.0
-            else:
-                self.weight = 0.5
-        except IndexError:
-            self.weight = 0.0
+        if code[6] == 'Y':
+            self._weight = 1.0
+        else:
+            self._weight = 0.5
 
-        self.course_count = 1  # Used for abstract courses
+        self._breadths = breadths
 
         self._is_passed = False
+
+    @property
+    def course_code(self):
+        return self._course_code
 
     @property
     def mark(self):
@@ -49,8 +48,12 @@ class Course:
             print('Invalid course type!')
 
     @property
-    def course_code(self):
-        return self._course_code
+    def weight(self):
+        return self._weight
+
+    @property
+    def breadths(self):
+        return self._breadths
 
     def _update_passed(self):
         """

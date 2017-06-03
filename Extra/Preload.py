@@ -34,6 +34,7 @@ def is_same(string, other):
     except IndexError:
         print('error:', string, other)
 
+
 def recur(list_, match=None):
     count = 1  # Skip the modifier
 

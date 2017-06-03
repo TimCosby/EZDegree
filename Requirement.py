@@ -33,7 +33,7 @@ class Requirement:
     ==================
         @param str _modifier:
             The type of requirement for the group
-        @param Courses _courses:
+        @param Courses requirements:
             A copy of the course_cache
         @param list of Course _exclusions:
             A list of courses the requirement isn't valid for
@@ -59,7 +59,7 @@ class Requirement:
 
     def __init__(self, modifier, min, max, courses, exclusions, treatall, only_used, only_unused, taken_courses, breadth):
         self._modifier = modifier
-        self._courses = courses
+        self._requirements = courses
         self._exclusions = exclusions if exclusions is not None else set([])
         self._min = min
         self._max = max
@@ -89,19 +89,19 @@ class Requirement:
         if self.modifier[3:7] == 'PASS':
             temp = self._get_stuff(used.copy(), False)
 
-            if self._reqmet:
+            if self.passed:
                 self._used_courses = temp
 
         elif 'CREDITS' in self.modifier:
             used = self._get_stuff(used.copy(), True)
 
-            if self._reqmet:
+            if self.passed:
                 self._used_courses = used
 
         elif 'MARK' == self.modifier:
             used = self._get_min_mark(used.copy())
 
-            if self._reqmet:
+            if self.passed:
                 self._used_courses = used
 
         else:
@@ -125,13 +125,13 @@ class Requirement:
         :return: list of Course|Requirement
         """
 
-        return self._courses
+        return self.requirements
 
     def _get_stuff(self, used, credits=False):
         self._credits_have = 0.0
         self._requirements_met = 0
 
-        for course in self._courses:
+        for course in self.requirements:
             if not self._treatall:
                 # If not looking at every course possible
                 if credits and self._credits_have >= self._max:
@@ -161,7 +161,6 @@ class Requirement:
 
                     if taken_course not in self._exclusions and self._taken[taken_course].is_passed() and is_same(course, taken_course):
                         # If course meets regular and abstract course requirements
-                        print(self._only_used, self._only_unused, taken_course, used)
                         self._add_to_requirement(taken_course, used)
 
                         if course[-1] == 'X':
@@ -203,9 +202,9 @@ class Requirement:
         self._requirements_met = 0
         self._credits_have = 0.0
 
-        if self._courses in self._taken and self._taken[self._courses].mark >= self.need:
+        if self.requirements in self._taken and self._taken[self.requirements].mark >= self.need:
             self._reqmet = True
-            self._add_to_requirement(self._courses, used)
+            self._add_to_requirement(self.requirements, used)
 
         else:
             self._reqmet = False
@@ -232,8 +231,8 @@ class Requirement:
             return self._credits_have
 
         elif self._modifier == 'MARK':
-            if self._courses in self._taken:
-                return self._taken[self._courses]
+            if self.requirements in self._taken:
+                return self._taken[self.requirements]
             else:
                 return 0
 
@@ -265,11 +264,19 @@ class Requirement:
             self._requirements_met += 1
             used.add(course)
 
+    def _get_requirements(self):
+        return self._requirements
+
+    def _get_reqmet(self):
+        return self._reqmet
+
     modifier = property(_get_modifier)
     courses = property(_get_courses)
     update = property(_update)
     need = property(_get_need)
     have = property(_get_have)
+    requirements = property(_get_requirements)
+    passed = property(_get_reqmet)
 
     def __repr__(self):
         return 'Requirements(' + self._modifier + ' | N: ' + str(self.need) + ', H: ' + str(self.have) + ')'
