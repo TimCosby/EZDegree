@@ -161,8 +161,11 @@ class Requirement:
 
                     if taken_course not in self._exclusions and self._taken[taken_course].is_passed() and is_same(course, taken_course):
                         # If course meets regular and abstract course requirements
+                        print(self._only_used, self._only_unused, taken_course, used)
                         self._add_to_requirement(taken_course, used)
-                        break
+
+                        if course[-1] == 'X':
+                            break
 
             elif course in self._taken and course not in self._exclusions and self._taken[course].is_passed():
                 # If a Regular course
@@ -246,14 +249,16 @@ class Requirement:
         :return: NoneType
         """
 
-        if self._only_used and course in used:
-            self._credits_have += self._taken[course].weight
-            self._requirements_met += 1
+        if self._only_used:
+            if course in used:
+                self._credits_have += self._taken[course].weight
+                self._requirements_met += 1
 
-        elif self._only_unused and course not in used:
-            self._credits_have += self._taken[course].weight
-            self._requirements_met += 1
-            used.add(course)
+        elif self._only_unused:
+            if course not in used:
+                self._credits_have += self._taken[course].weight
+                self._requirements_met += 1
+                used.add(course)
 
         else:
             self._credits_have += self._taken[course].weight

@@ -421,7 +421,7 @@ class User:
         exclusions = set([]) if exclusions is None else exclusions
 
         if modifier != 'MARK':
-            transformed_requirements = set([])
+            transformed_requirements = []
 
             if modifier[0] == 'X':
                 only_used = True
@@ -442,7 +442,9 @@ class User:
                     exclusions.add(item)
                 start_index += 1
 
-            if requirements[start_index] == 'TREATALL':
+            if treatall:
+                pass
+            elif requirements[start_index] == 'TREATALL':
                 start_index += 1
                 treatall = True
             else:
@@ -450,13 +452,14 @@ class User:
 
             for item in range(start_index, end_index):
                 item = requirements[item]
+
                 if isinstance(item, list):
-                    transformed_requirements.add(self.convert_to_requirement(item, exclusions=exclusions, treatall=treatall, only_used=only_used, only_unused=only_unused))
+                    transformed_requirements.append(self.convert_to_requirement(item, exclusions=exclusions, treatall=treatall, only_used=only_used, only_unused=only_unused))
 
                 else:
                     #self._courses.add_course(item)
                     #transformed_requirements.add(self._courses.course_cache[item])
-                    transformed_requirements.add(item)
+                    transformed_requirements.append(item)
 
             return Requirement(modifier, min, max, transformed_requirements, exclusions, treatall, only_used, only_unused, self._taken_courses, self._breadths)
 
