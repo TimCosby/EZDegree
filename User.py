@@ -414,7 +414,6 @@ class User:
         :param bool only_unused: If only courses that have previously not been used are being used
         :return: Requirement
         """
-        start = time.time()
 
         modifier = requirements[0]
         start_index = 1
@@ -459,12 +458,9 @@ class User:
                     #transformed_requirements.add(self._courses.course_cache[item])
                     transformed_requirements.add(item)
 
-            print('Took', time.time()-start)
             return Requirement(modifier, min, max, transformed_requirements, exclusions, treatall, only_used, only_unused, self._taken_courses, self._breadths)
 
         else:
-            #self._courses.add_course(requirements[1])
-            print('Took', time.time()-start)
             return Requirement(modifier, None, requirements[-1], requirements[1], exclusions, treatall, only_used, only_unused, self._taken_courses, self._breadths)
 
 
