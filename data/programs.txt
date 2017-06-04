@@ -184,6 +184,88 @@
 		'requirements': ['MAXPASS', ['MARK', 'BIO120H1', 60], ['MARK', 'BIO130H1', 60], ['MAXPASS', ['MAXPASS', ['MARK', 'CHM135H1', 60], ['MARK', 'CHM136H1', 60], 2], ['MAXPASS', ['MARK', 'CHM138H1', 60], ['MARK', 'CHM139H1', 60], 2], ['MARK', 'CHM151Y1', 60], 1], ['MAXPASS', ['MAXPASS', ['MARK', 'MAT135H1', 60], ['MARK', 'MAT136H1', 60], 2], ['MARK', 'MAT137Y1', 60], ['MARK', 'MAT157Y1', 60], 1], 'BCH210H1', ['MAXPASS', 'BIO230H1', 'BIO255H1', 1], ['MAXPASS', 'CHM247H1', 'CHM249H1', 1], 'BCH311H1', 'BCH370H1', ['MAXCREDITS', 'BIO220H1', 'BIO260H1', 'CHM217H1', 'CHM220H1', 'CHMB265H1', 'BCH340H1', 'CHM3****', 'CSB3****', 'EEB3****', 'HMB3****', 'IMM3****', 'LMP3****', 'MGY3****', 'PCL3****', 'PSL3****', 1.5], ['MAXPASS', 'BCH422H1', 'BCH425H1', 'BCH426H1', 'BCH440H1', 'BCH441H1', 'BCH444H1', 'BCH445H1', 'BCH446H1', 'BCH447H1', 'BCH448H1', 'BCH449H1', 'CHM447H1', 2]]}}
 @
 @
+@ Cell and Systems Biology Programs
+{'ASMAJ1538': {'name': 'Animal Physiology Major', 
+		'id': 'ASMAJ1538', 
+		'type': 'Major', 
+		'description': "", 
+		'requirements': ['MAXPASS', ['MAXPASS', 'BIO150Y1', ['MAXPASS', 'BIO120H1', 'BIO220H1', 2], 1], ['MAXPASS', ['MAXPASS', 'BIO240H1', 'BIO241H1', 'BIO255H1', 3], ['MAXPASS', ['MAXPASS', 'BIO130H1', 'BIO255H1', 1], 'BIO230H1', 2], 2], ['MAXPASS', ['MAXPASS', 'CHM135H1', 'CHM136H1', 2], ['MAXPASS', 'CHM138H1', 'CHM139H1', 2], 'CHM151Y1', 1], ['MAXPASS', 'JMB170Y1', ['MAXPASS', 'MAT135H1', 'MAT136H1', 2], 'MAT137Y1', 'MAT157Y1', ['MAXPASS', 'PHY131H1', 'PHY132H1', 2], ['MAXPASS', 'PHY151H1', 'PHY152H1', 2], 1], 'BIO270H1', 'BIO271H1', 'CSB325H1', ['MAXCREDITS', 'CJH332H1', 'CSB332H1', 'CSB343H1', 'CSB346H1', 0.5], ['MAXCREDITS', ['MINCREDITS', 'BCH210H1', ['MAXPASS', 'BIO260H1', 'HMB265H1', 1], 'CSB299Y1', 'EEB263H1', 'STA220H1', 0.0, 1.0], ['MINCREDITS', 'CJH332H1', 'CSB327H1', 'CSB329H1', 'CSB330H1', 'CSB331H1', 'CSB332H1', 'CSB343H1', 'CSB345H1', 'CSB346H1', 'CSB348H1', 'CSB352H1', 'CSB397Y0', 'PSY397H1', 0.5, 1.5], 1.5], ['MAXCREDITS', 'CSB426H1', 'CSB432H1', 'CSB443H1', 'CSB445H1', 'CSB447H1', 'CSB492H1', 'CSB497H1', 'CSB498Y1', 'CSB499Y1', 'HMB430H1', 'HMB472H1', 'HMB496Y1', 'HMB499Y1', 'PSL432H1', 'PSL452H1', 0.5]]}}
+@
+{'ASSPE1003': {'name': 'Cell & Molecular Biology Specialist', 
+		'id': 'ASSPE1003', 
+		'type': 'Specialist', 
+		'description': "", 
+		'requirements': ['MAXPASS', ['MAXPASS', ['MARK', 'BIO130H1', 70], ['MARK', 'BIO230H1', 70], 1], ['MAXPASS', 'BIO150Y1', ['MAXPASS', 'BIO120H1', 'BIO220H1', 2], 1], ['MAXPASS', ['MAXPASS', 'BIO240H1', 'BIO241H1', 'BIO255H1', 3], ['MAXPASS', ['MAXPASS', 'BIO130H1', 'BIO255H1', 1], 'BIO230H1', 2], 2], ['MAXPASS', ['MAXPASS', 'CHM135H1', 'CHM136H1', 2], ['MAXPASS', 'CHM138H1', 'CHM139H1', 2], 'CHM151Y1', 1], ['MAXPASS', 'JMB170Y1', ['MAXPASS', 'MAT135H1', 'MAT136H1', 2], 'MAT137Y1', 'MAT157Y1', ['MAXPASS', 'PHY131H1', 'PHY132H1', 2], ['MAXPASS', 'PHY151H1', 'PHY152H1', 2], 1], 'BIO270H1', 'BIO271H1', ['MAXPASS', 'BIO260H1', 'HMB265H1', 1], ['MAXPASS', 'CSB330H1', 'CSB350H1', 1], 'CSB331H1', 'CSB349H1', ['MAXPASS', 'CSB428H1', 'CSB435H1', 1], ['MAXCREDITS', 'BCH422H1', 'BCH426H1', 'BCH445H1', 'CSB327H1', 'CSB447H1', 0.5], ['MAXCREDITS', ['MINCREDITS', 'BCH422H1', 'BCH426H1', 'BCH440H1', 'BCH441H1', 'BCH444H1', 'BCH445H1', 'CSB427H1', 'CSB428H1', 'CSB429H1', 'CSB430H1', 'CSB431H1', 'CSB435H1', 'CSB447H1', 'CSB450H1', 'CSB452H1', 'CSB458H1', 'CSB459H1', 'CSB460H1', 'CSB472H1', 'CSB473H1', 'CSB474H1', 'CSB475H1', 'CSB490H1', 'CSB491H1', 'CSB492H1', 'CSB497H1', 'CSB498Y1', 'CSB499Y1', ['MAXPASS', 'HMB496Y1', 'HMB499Y1', 1], 'MGY480Y1', 0.5, 3.0], ['MINCREDITS', 'CJH332H1', 'CSB299Y1', 'CSB327H1', 'CSB328H1', 'CSB329H1', 'CSB330H1', 'CSB332H1', 'CSB340H1', 'CSB350H1', 'CSB351Y1', 'CSB352H1', 'CSB353H1', 'CSB397Y0', 0.0, 2.5], 3.0]]}}
+@
+{'ASMAJ1003': {'name': 'Cell & Molecular Biology Major', 
+		'id': 'ASMAJ1003', 
+		'type': 'Major', 
+		'description': "", 
+		'requirements': ['MAXPASS', ['MAXPASS', 'BIO150Y1', ['MAXPASS', 'BIO120H1', 'BIO220H1', 2], 1], ['MAXPASS', ['MAXPASS', 'BIO240H1', 'BIO241H1', 'BIO255H1', 3], ['MAXPASS', ['MAXPASS', 'BIO130H1', 'BIO255H1', 1], 'BIO230H1', 2], 2], ['MAXPASS', ['MAXPASS', 'CHM135H1', 'CHM136H1', 2], ['MAXPASS', 'CHM138H1', 'CHM139H1', 2], 'CHM151Y1', 1], ['MAXPASS', 'JMB170Y1', ['MAXPASS', 'MAT135H1', 'MAT136H1', 2], 'MAT137Y1', 'MAT157Y1', ['MAXPASS', 'PHY131H1', 'PHY132H1', 2], ['MAXPASS', 'PHY151H1', 'PHY152H1', 2], 1], ['MAXPASS', 'BIO260H1', 'HMB265H1', 1], 'BCH210H1', 'CSB349H1', ['MAXCREDITS', 'CSB327H1', 'CSB328H1', 'CSB331H1', 'CSB340H1', 'CSB351Y1', 1.0], ['MAXCREDITS', ['MINCREDITS', ['MAXCREDITS', 'BCH422H1', 'BCH426H1', 'BCH440H1', 'BCH441H1', 'BCH444H1', 'BCH445H1', 0.5], 'CSB427H1', 'CSB428H1', 'CSB429H1', 'CSB430H1', 'CSB431H1', 'CSB435H1', 'CSB447H1', 'CSB450H1', 'CSB452H1', 'CSB458H1', 'CSB459H1', 'CSB460H1', 'CSB472H1', 'CSB473H1', 'CSB474H1', 'CSB475H1', 'CSB490H1', 'CSB491H1', 'CSB492H1', 'CSB497H1', 'CSB498Y1', 'CSB499Y1', ['MAXPASS', 'HMB496Y1', 'HMB499Y1', 1], 'MGY480Y1', 0.5, 1.5], ['MINCREDITS', 'CJH332H1', 'CSB299Y1', 'CSB327H1', 'CSB328H1', 'CSB329H1', 'CSB330H1', 'CSB331H1', 'CSB332H1', 'CSB340H1', 'CSB350H1', 'CSB351Y1', 'CSB352H1', 'CSB353H1', 'CSB397Y0', 0.0, 1.0], 1.5]]}}
+@
+{'ASFOC1003A': {'name': 'Developmental Biology Specialist', 
+		'id': 'ASFOC1003A', 
+		'type': 'Specialist', 
+		'description': "", 
+		'requirements': ['MAXPASS', ['MAXPASS', 'BIO150Y1', ['MAXPASS', 'BIO120H1', 'BIO220H1', 2], 1], ['MAXPASS', ['MAXPASS', 'BIO240H1', 'BIO241H1', 'BIO255H1', 3], ['MAXPASS', ['MAXPASS', 'BIO130H1', 'BIO255H1', 1], 'BIO230H1', 2], 2], ['MAXPASS', ['MAXPASS', 'CHM135H1', 'CHM136H1', 2], ['MAXPASS', 'CHM138H1', 'CHM139H1', 2], 'CHM151Y1', 1], ['MAXPASS', 'JMB170Y1', ['MAXPASS', 'MAT135H1', 'MAT136H1', 2], 'MAT137Y1', 'MAT157Y1', 1], 'BCH210H1', 'BIO260H1', ['MAXPASS', 'CHM220H1', 'CHM247H1', 'CHM249H1', 1], ['MAXCREDITS', 'BIO251H1', 'BIO270H1', 'BIO271H1', 1.0], 'CSB349H1', 'CSB328H1', 'CSB340H1', ['MAXCREDITS', ['MINCREDITS', 'ANA300Y1', 'ANA301H1', 'BCH340H1', 'BCH370H1', 'BCH425H1', 'BCH426H1', 'CSB327H1', 'CSB329H1', 'CSB330H1', 'CSB331H1', 'CSB350H1', 'CSB352H1', 'CSB397Y0', 'CSB427H1', 'CSB435H1', 'CSB450H1', 'CSB459H1 CSB460H1', 'CSB472H1', 'CSB473H1', 'CSB474H1', 'CSB475H1', 'CSB492H1', 'EEB340H1', 'EEB460H1', 'IMM340H1', 'IMM350H1', 'IMM428H1', 'IMM429H1', 'MGY425H1', 'MGY428H1', 'MGY451H1', 'MGY452H1', 'MGY470H1', 'PSL304H1', 'PSL305H1', 'PSL420H1', 'PSL470H1', 2.5, 3.5], ['MINCREDITS', 'CSB428H1', 'CSB429H1', 'CSB430H1', 'CSB431H1', 'CSB458H1', 'CSB483H1', 'CSB497H1', 'CSB498Y1', 'CSB499Y1', ['MAXPASS', 'HMB496Y1', 'HMB499Y1', 1], 'MGY480Y1', 1.0, 2.0], 4.5]]}}
+@
+@
+@ Chemistry Programs
+{'ASSPE1995': {'name': 'Biological Chemistry Specialist', 
+		'id': 'ASSPE1995', 
+		'type': 'Specialist', 
+		'description': "Biological Chemistry examines Nature at the molecular level by using a combination of synthetic, inorganic, analytical and physical chemistry as well as the tools of molecular biology and biochemistry.  This program provides the setting to understand the chemical reactions and interactions that occur in biological processes, as well as how chemical strategies can be used to control these systems. This program includes sufficient flexibility to allow focus in areas such as bioinorganic, bioorganic, biophysical or medicinal chemistry.  Students graduating from this program will be prepared for career paths in the biotechnology, biomedical and pharmaceutical sectors, as well as for research and teaching in related areas of chemistry and biology. This program is accredited by the Canadian Society for Chemistry.", 
+		'requirements': ['MAXPASS', 'BIO120H1', 'BIO130H1', ['MAXPASS', ['MARK', 'CHM151Y1', 63], 'CHM135H1', 'CHM139H1', 1], ['MAXPASS', 'CHM136H1', 'CHM138H1', 1], ['MAXPASS', ['MAXPASS', 'MAT135H1', 'MAT136H1', 2], 'MAT137Y1', 1], ['MAXPASS', ['MAXPASS', 'PHY131H1', 'PHY132H1', 2], ['MAXPASS', 'PHY151H1', 'PHY152H1', 2], 1], 'CHM210H1', ['MAXPASS', 'BIO230H1', 'BIO250Y1', 1], 'CHM217H1', ['MAXPASS', ['MAXPASS', ['MAXPASS', 'CHM220H1', 'CHM222H1', 1], ['MAXPASS', 'CHM221H1', 'CHM223H1', 1], 2], 'CHM225Y1', 1], 'CHM238Y1', ['MAXPASS', 'CHM249H1', 'CHM247H1', 1], ['MAXCREDITS', ['MINCREDITS', 'CHM317H1', 'CHM327H1', 'CHM338H1', 'CHM343H1', 'CHM410H1', 'CHM499Y1', 1.0, 3.0], ['MAXPASS', 'BIO230H1', 'BIO250Y1', 1], ['MAXCREDITS', 'CHM437H1', 'CHM447H1', 'CHM479H1', 'CSB450H1', 3.5], 5.0]]}}
+@
+{'ASSPE0600': {'name': 'Chemical Physics Specialist', 
+		'id': 'ASSPE0600', 
+		'type': 'Specialist', 
+		'description': "Chemical Physics aims to explain structure and dynamics of molecular and bulk systems in terms of atomic and molecular interactions.  Sub-disciplines and specialized topics include reaction dynamics, spectroscopy, optical control of molecular processes, nanoscale science, surface chemistry, theoretical and experimental studies of soft systems (polymers, liquids, biological systems), quantum control and quantum information sicences.  The Chemical Physics program will provide students with a solid grounding in physical chemistry, and will prepare students for careers in experimental and theoretical physical sicences, in academia or in reseach development for companies.", 
+		'requirements': ['MAXPASS', ['MAXPASS', ['MARK', 'CHM151Y1', 63], ['MAXPASS', 'CHM135H1', 'CHM139H1', 1], ['MAXPASS', 'CHM136H1', 'CHM138H1', 1], 2], ['MAXPASS', ['MAXPASS', 'MAT135H1', 'MAT136H1', 2], 'MAT137Y1', 'MAT157Y1', 1], ['MAXPASS', ['MAXPASS', 'PHY131H1', 2], ['MAXPASS', 'PHY151H1', 'PHY152H1', 2], 1], 'APM346H1', ['MAXPASS', ['MAXPASS', 'CHM222H1', 'CHM223H1', 2], 'CHM225Y1', 1], 'CHM326H1', 'CHM327H1', 'CHM328H1', ['MAXPASS', 'MAT223H1', 'MAT240H1', 1], ['MAXPASS', 'MAT235Y1', 'MAT237Y1', 1], 'MAT244H1', 'MAT334H1', 'PHY250H1', 'PHY254H1', 'PHY354H1', 'PHY350H1', ['MAXPASS', 'CHM423H1', 'PHY356H1', 1], ['MAXCREDITS', 'CHM217H1', 'CHM238Y1', ['MAXPASS', 'CHM249H1', 'CHM247H1', 1], 'CHM310H1', 'CHM317H1', 'CHM338H1', 'CHM348H1', 'CHM415H1', 2.0], ['MAXCREDITSX', 'CHM4**H*', 'PHY4**H*', 1.0]]}}
+@
+{'ASSPE1376': {'name': 'Chemistry Specialist', 
+		'id': 'ASSPE1376', 
+		'type': 'Specialist', 
+		'description': "The Chemistry Specialist Program provides a broad coverage of the core areas of chemistry together with appropriate courses in mathematics and physics during the first three years, and allows students to follow a particular area of interest or a more general program in fourth year. The program is suitable for professional work in any area of chemistry and for entry into graduate school to continue work in any of the sub-fields of chemistry, provided that appropriate options are chosen in fourth year. This program is accredited by the Canadian Society for Chemistry.", 
+		'requirements': ['MAXPASS', ['MAXPASS', ['MARK', 'CHM151Y1', 63], ['MAXPASS', 'CHM135H1', 'CHM139H1', 1], ['MAXPASS', 'CHM136H1', 'CHM138H1', 1], 2], ['MAXPASS', ['MAXPASS', 'MAT135H1', 'MAT136H1', 2], 'MAT137Y1', 1], ['MAXPASS', ['MAXPASS', 'PHY131H1', 2], ['MAXPASS', 'PHY151H1', 'PHY152H1', 2], 1], 'CHM217H1', ['MAXPASS', ['MAXPASS', 'CHM220H1', 'CHM222H1', 2], ['MAXPASS', 'CHM221H1', 'CHM223H1', 2], 'CHM225Y1', 1], 'CHM238Y1', 'CHM249H1', ['MAXPASS', 'MAT235Y1', 'MAT237Y1', 1], 'BCH210H1', ['MAXPASS', 'CHM326H1', 'CHM328H1', 1], 'CHM327H1', ['MAXCREDITS', ['MINCREDITS', 'CHM317H1', 'CHM338H1', 'CHM343H1', 'CHM379H1', 'CHM410H1', 'CHM499Y1', 1.5, 3.0], ['MINCREDITSX', 'CHM4****', 2.5, 4.0], 5.5]]}}
+@
+{'ASMAJ1376': {'name': 'Chemistry Major', 
+		'id': 'ASMAJ1376', 
+		'type': 'Major', 
+		'description': "", 
+		'requirements': ['MAXPASS', ['MAXPASS', ['MARK', 'CHM151Y1', 63], ['MAXPASS', 'CHM135H1', 'CHM139H1', 1], ['MAXPASS', 'CHM136H1', 'CHM138H1', 1], 2], ['MAXPASS', ['MAXPASS', 'MAT135H1', 'MAT136H1', 2], 'MAT137Y1', 1], ['MINPASS', 'CHM217H1', ['MAXPASS', 'CHM220H1', 'CHM222H1', 'CHM225Y1', 1], 'CHM238Y1', ['CHM249H1', 'CHM247H1', 1], 2, 4], ['MINPASS', 'CHM317H1', 'CHM327H1', 'CHM338H1', 'CHM343H1', 'CHM348H1', 'CHM379H1', 2, 6], ['MAXPASSX', ('CHM299Y1', 'CHM396Y0', 'CHM397H0', 'CHM398H0', 'CHM399Y0'), 'CHM2****', 'CHM3****', 'CHM4****', 7]]}}
+@
+{'ASMIN1376': {'name': 'Chemistry Minor', 
+		'id': 'ASMIN1376', 
+		'type': 'Minor', 
+		'description': "", 
+		'requirements': ['MAXPASS', ['MAXPASS', ['MARK', 'CHM151Y1', 63], ['MAXPASS', 'CHM135H1', 'CHM139H1', 1], ['MAXPASS', 'CHM136H1', 'CHM138H1', 1], 2], ['MINPASS', 'CHM217H1', ['MAXPASS', 'CHM220H1', 'CHM222H1', 'CHM225Y1', 1], 'CHM238Y1', ['MAXPASS', 'CHM249H1', 'CHM247H1', 1], 1, 4], ['MINPASS', 'CHM317H1', 'CHM327H1', 'CHM338H1', 'CHM343H1', 'CHM348H1', 'CHM379H1', 1, 6], ['MAXPASSX', ('CHM299Y1', 'CHM396Y0', 'CHM397H0', 'CHM398H0', 'CHM399Y0'), 'CHM2****', 'CHM3****', 'CHM4****', 4]]}}
+@
+{'ASSPE2543': {'name': 'Environmental Chemistry Specialist', 
+		'id': 'ASSPE2543', 
+		'type': 'Specialist', 
+		'description': "Jointly sponsored by the School of the Environment and the Department of Chemistry, this program focuses on analytical theory, instrumentation and methodological aspects of organic and inorganic contaminants in soil, water, air and biological tissues.", 
+		'requirements': ['MAXPASS', ['MAXPASS', 'BIO120H1', ['MAXPASS', 'BIO130H1', 'BIO220H1', 1], 2], ['MAXPASS', ['MARK', 'CHM151Y1', 63], ['MAXPASS', ['MAXPASS', 'CHM135H1', 'CHM139H1', 1], ['MAXPASS', 'CHM136H1', 'CHM138H1', 1], 2], ['MAXPASS', ['MAXPASS', 'MAT135H1', 'MAT136H1', 2], 'MAT137Y1', 1], ['MAXPASS', ['MAXPASS', 'PHY131H1', 'PHY132H1', 2], ['MAXPASS', 'PHY151H1', 'PHY152H1', 2], 1], 'CHM217H1', ['MAXPASS', ['MAXPASS', 'CHM220H1', 'CHM222H1', 1], ['MAXPASS', 'CHM221H1', 'CHM223H1', 1], 2], 'CHM225Y1', 1], 'CHM238Y1', ['MAXPASS', 'CHM247H1', 'CHM249H1', 1], ['MAXPASS', ['MAXPASS', 'CHM210H1', 'GGR203H1', 2], 'GGR314H1', 1], ['MAXPASS', 'STA220H1', 'GGR270H1', 1], 'CHM310H1', 'CHM410H1', 'CHM415H1', 'ENV234H1', 'ENV221H1', 'ENV222H1', ['MAXPASS', 'ENV334H1', 'ENV341H1', 'ENV346H1', 1], ['MAXCREDITSX', 'CHM3****', 'CHM4****', 1.0], ['MAXPASS', 'ENV421H1', 'CHM499Y1', 'CHM398H0', 1], ['MAXCREDITSX', 'BR4', 'BR5', 0.5]]}}
+@
+{'ASMIN2543': {'name': 'Environmental Chemistry Minor', 
+		'id': 'ASMIN2543', 
+		'type': 'Minor', 
+		'description': "", 
+		'requirements': ['MAXPASS', ['MAXPASS', ['MAXPASS', ['MAXPASS', 'CHM135H1', 'CHM139H1', 1], ['MAXPASS', 'CHM136H1', 'CHM138H1', 1], 2], 'CHM151Y1', 1], ['MAXCREDITS', 'CHM217H1', ['MAXPASS', 'CHM220H1', 'CHM222H1', 'CHM225Y1', 1], 'CHM238Y1', ['MAXPASS', 'CHM247H1', 'CHM249H1'], 1.0], 'CHM210H1', 'CHM310H1', ['MAXPASS', 'CHM317H1', 'CHM410H1', 'CHM415H1', 2]]}}
+@
+{'ASSPE1377': {'name': 'Synthetic & Catalytic Chemistry Specialist', 
+		'id': 'ASSPE1377', 
+		'type': 'Specalist', 
+		'description': "This program focuses on the fundamentals and practical aspects of modern synthetic organic and inorganic chemistry, and the understanding and applications of catalytic reactions. Students will become exposed to extensive green chemistry approaches from both experimental and theoretical perspectives. The program provides preparation for career paths as synthetic / discovery chemists, in the pharmaceutical, biotechnology, biomedical, crop protection, materials and related sectors, or for academic research and teaching positions. This program is accredited by the Canadian Society for Chemistry.", 
+		'requirements': ['MAXPASS', ['MAXPASS', ['MARK', 'CHM151Y1', 63], ['MAXPASS', ['MAXPASS', 'CHM135H1', 'CHM139H1', 1], ['MAXPASS', 'CHM136H1', 'CHM138H1', 1], 2], 1], ['MAXPASS', ['MAXPASS', 'MAT135H1', 'MAT136H1', 2], 'MAT137Y1', 1], ['MAXPASS', ['MAXPASS', 'PHY131H1', 'PHY132H1', 2], ['MAXPASS', 'PHY151H1', 'PHY152H1', 2], 1], 'BCH210H1', 'CHM217H1', ['MAXPASS', 'CHM225Y1', ['MAXPASS', ['MAXPASS', 'CHM220H1', 'CHM222H1', 1], ['MAXPASS', 'CHM221H1', 'CHM223H1', 1], 2], 1], 'CHM238Y1', ['MAXPASS', 'CHM249H1', 'CHM247H1', 1], ['MAXPASS', 'MAT235Y1', 'MAT237Y1', 1], 'CHM317H1', 'CHM338H1', 'CHM342H1', 'CHM343H1', 'CHM347H1', 'CHM348H1', 'CHM432H1', 'CHM440H1', 'CHM441H1', 'CHM443H1', ['MAXCREDITS', ['MINCREDITS', 'CHM499Y1', 'CHM398H0', 0.5, 1.5], ['MINCREDITS', 'CHM325H1', 'CHM328H1', 'CHM379H1', 'CHM416H1', 'CHM434H1', 'CHM437H1', 'CHM447H1', 'CHM479H1', 1.0, 2.0], 2.5]]}}
+@
+{'ASMIN2723': {'name': 'Nanoscience Minor', 
+		'id': 'ASMIN2723', 
+		'type': 'Minor', 
+		'description': "", 
+		'requirements': ['MAXPASS', ['MAXPASS', 'CHM151Y1', 'CHM135H1', 'CHM139H1', 1], ['MAXPASS', ['MAXPASS', 'PHY151H1', 'PHY152H1', 2], ['MAXPASS', 'PHY131H1', 'PHY132H1', 2], 1], 'NUS227H0', 'NUS228H0', 'NUS328H0', 'NUS328H0', 'NUS398H0', ['MAXCREDITSX', 'CHM*****', 0.5]]}}
+@
+@
 @ Economics Programs
 {'ASSPE1478': {'name': 'Economics Specialist', 
 		'id': 'ASSPE1478', 
@@ -213,7 +295,7 @@
 		'id': 'ASMIN1478', 
 		'type': 'Minor', 
 		'description': "", 
-		'requirements': ['MAXPASS', ['MAXPASS', ['MARK', 'ECO100Y1', 67], ['MARK', 'ECO105Y1', 80], 1], ['MAXPASS', ['MARK', 'MAT133Y1', 63], ['MAXPASS', ['MARK', 'MAT135H1', 60], ['MARK', 'MAT136H1', 60], 2], ['MARK', 'MAT137Y1', 55], ['MARK', 'MAT157Y1', 55], 1], ['MAXPASS', 'ECO200Y1', 'ECO204Y1', 'ECO206Y1', 1], ['MAXCREDITS', 'ECO3****', 'ECO4****', 1.5]]}}
+		'requirements': ['MAXPASS', ['MAXPASS', ['MARK', 'ECO100Y1', 67], ['MARK', 'ECO105Y1', 80], 1], ['MAXPASS', ['MARK', 'MAT133Y1', 63], ['MAXPASS', ['MARK', 'MAT135H1', 60], ['MARK', 'MAT136H1', 60], 2], ['MARK', 'MAT137Y1', 55], ['MARK', 'MAT157Y1', 55], 1], ['MAXPASS', 'ECO200Y1', 'ECO204Y1', 'ECO206Y1', 1], ['MAXCREDITS', 'ECO3****', 'ECO4****', 1.0]]}}
 @
 @
 @ MATH Programs
@@ -281,4 +363,4 @@
 @{'': {'name': '', 'id': '', 'type': '', 'description': "", 'requirements': []}}
 @
 @ABS;USA;ANA;ANT;FAH;ARH;AST;BCH;CTA;CSB;CHM;CIN;CLA;COL;CSC;EDU;CAS;CRI;DTS;DRM;ESS;EAS;EEB;ECO;IRE;ENG;ENV;ETH;EUR;FOR;FRE;GGR;GER;HIS;HPS;HMB;IMM;IMC;INI;ITA;CJS;LMP;LAS;LIN;MAT;MST;MGY;MUS;NMC;NEW;NFS;PCJ;PHC;PCL;PHL;PHY;PSL;POL;PSY;PPG;RLG;RSM;SDS;SLA;SOC;SAS;SPA;SMC;STA;TRN;UNI;VIC;WGS;WDW
-@|----------------------------------                 ---     ---                             ---             ---                                     ---                         -------                          
+@|------------------------------------------         ---     ---                             ---             ---                                     ---                         -------                          
